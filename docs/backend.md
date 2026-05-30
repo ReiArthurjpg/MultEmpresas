@@ -1,20 +1,22 @@
 # Backend MultEmpresas
 
-## Princípios
+## Documentação separada por tema
 
-- API First e desacoplada de frontend.
-- Single Database + Shared Schema para multi-tenancy.
-- Todas as entidades transacionais possuem `company_id` quando aplicável.
-- MASTER pode operar globalmente; ADMIN e OPERATOR são isolados por empresa.
+A documentação do backend foi dividida em arquivos temáticos para facilitar a leitura e a manutenção.
 
-## Segurança
+- [Autenticação](auth.md)
+- [Empresas](companies.md)
+- [Planos](plans.md)
+- [Usuários](users.md)
+- [Auditoria](audit.md)
 
-- Senhas com `password_hash(..., PASSWORD_ARGON2ID)`.
-- Access token JWT configurável por `ACCESS_TOKEN_EXPIRE`.
-- Refresh token persistido por hash SHA-256.
-- Rate limit de login por IP.
-- TOTP compatível com Google Authenticator.
+## Como navegar
 
-## Endpoints principais
+Abra qualquer um dos arquivos acima para ver detalhes de endpoints, permissões e observações específicas.
 
-Consulte `/docs` para a especificação OpenAPI completa.
+## Observações gerais
+
+- O tenant é determinado pelo JWT e aplicado nos repositórios de `users`, `companies` e auditoria.
+- `MASTER` tem acesso global; `ADMIN` e `OPERATOR` são restritos à própria empresa.
+- A API de Swagger está disponível internamente em `/docs`.
+- A especificação OpenAPI está em `/swagger/openapi.json`.
