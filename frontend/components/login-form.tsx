@@ -92,55 +92,79 @@ export function LoginForm() {
   return (
     <>
       <form className="login-form" onSubmit={handleSubmit} noValidate>
-        <div className="field-group">
-          <label htmlFor="email">E-mail</label>
-          <div className="input-shell">
-            <Mail aria-hidden="true" className="input-icon" size={18} />
-            <input
-              aria-describedby={visibleEmailError ? "email-error" : undefined}
-              aria-invalid={Boolean(visibleEmailError)}
-              autoComplete="email"
-              className={cn("form-input", visibleEmailError && "input-error")}
-              id="email"
-              inputMode="email"
-              onChange={(event) => updateEmail(event.target.value)}
-              placeholder="seu@email.com"
-              type="email"
-              value={email}
-            />
-          </div>
-          {visibleEmailError ? <p id="email-error" role="alert">{visibleEmailError}</p> : null}
-        </div>
+        {!requiresTotp ? (
+          <>
+            <div className="field-group">
+              <label htmlFor="email">E-mail</label>
+              <div className="input-shell">
+                <Mail aria-hidden="true" className="input-icon" size={18} />
+                <input
+                  aria-describedby={visibleEmailError ? "email-error" : undefined}
+                  aria-invalid={Boolean(visibleEmailError)}
+                  autoComplete="email"
+                  className={cn("form-input", visibleEmailError && "input-error")}
+                  id="email"
+                  inputMode="email"
+                  onChange={(event) => updateEmail(event.target.value)}
+                  placeholder="seu@email.com"
+                  type="email"
+                  value={email}
+                />
+              </div>
+              {visibleEmailError ? <p id="email-error" role="alert">{visibleEmailError}</p> : null}
+            </div>
 
-        <div className="field-group">
-          <label htmlFor="password">Senha</label>
-          <div className="input-shell">
-            <Lock aria-hidden="true" className="input-icon" size={18} />
-            <input
-              aria-describedby={visiblePasswordError ? "password-error" : undefined}
-              aria-invalid={Boolean(visiblePasswordError)}
-              autoComplete="current-password"
-              className={cn("form-input password-input", visiblePasswordError && "input-error")}
-              id="password"
-              onChange={(event) => updatePassword(event.target.value)}
-              placeholder="••••••••"
-              type={showPassword ? "text" : "password"}
-              value={password}
-            />
-            <button
-              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-              className="password-toggle"
-              onClick={() => setShowPassword((current) => !current)}
-              type="button"
-            >
-              {showPassword ? <EyeOff aria-hidden="true" size={18} /> : <Eye aria-hidden="true" size={18} />}
-            </button>
-          </div>
-          {visiblePasswordError ? <p id="password-error" role="alert">{visiblePasswordError}</p> : null}
-        </div>
+            <div className="field-group">
+              <label htmlFor="password">Senha</label>
+              <div className="input-shell">
+                <Lock aria-hidden="true" className="input-icon" size={18} />
+                <input
+                  aria-describedby={visiblePasswordError ? "password-error" : undefined}
+                  aria-invalid={Boolean(visiblePasswordError)}
+                  autoComplete="current-password"
+                  className={cn("form-input password-input", visiblePasswordError && "input-error")}
+                  id="password"
+                  onChange={(event) => updatePassword(event.target.value)}
+                  placeholder="••••••••"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                />
+                <button
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  className="password-toggle"
+                  onClick={() => setShowPassword((current) => !current)}
+                  type="button"
+                >
+                  {showPassword ? <EyeOff aria-hidden="true" size={18} /> : <Eye aria-hidden="true" size={18} />}
+                </button>
+              </div>
+              {visiblePasswordError ? <p id="password-error" role="alert">{visiblePasswordError}</p> : null}
+            </div>
 
-        {requiresTotp ? (
+            <div className="form-options">
+              <label className="checkbox-label" htmlFor="rememberMe">
+                <input
+                  checked={rememberMe}
+                  id="rememberMe"
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                  type="checkbox"
+                />
+                <span>Lembrar de mim</span>
+              </label>
+            </div>
+          </>
+        ) : (
           <div className="field-group">
+            <div className="twofa-verification-header" style={{ marginBottom: "1.5rem", textAlign: "center" }}>
+              <div style={{ display: "inline-flex", padding: "0.75rem", borderRadius: "50%", background: "oklch(0.75 0.18 210 / 0.1)", color: "var(--primary)", marginBottom: "0.75rem" }}>
+                <Lock aria-hidden="true" size={24} />
+              </div>
+              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "0.25rem" }}>Verificação de 2 Fatores</h2>
+              <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>
+                Digite o código de 6 dígitos gerado pelo seu aplicativo autenticador.
+              </p>
+            </div>
+
             <label htmlFor="totpCode">Código 2FA</label>
             <input
               aria-describedby={visibleTotpError ? "totp-error" : undefined}
@@ -153,45 +177,55 @@ export function LoginForm() {
               onChange={(event) => updateTotp(event.target.value)}
               placeholder="000000"
               value={totpCode}
+              style={{ textAlign: "center", fontSize: "1.5rem", letterSpacing: "0.25em", fontWeight: "bold" }}
             />
             {visibleTotpError ? <p id="totp-error" role="alert">{visibleTotpError}</p> : null}
           </div>
-        ) : null}
-
-        <div className="form-options">
-          <label className="checkbox-label" htmlFor="rememberMe">
-            <input
-              checked={rememberMe}
-              id="rememberMe"
-              onChange={(event) => setRememberMe(event.target.checked)}
-              type="checkbox"
-            />
-            <span>Lembrar de mim</span>
-          </label>
-        </div>
+        )}
 
         {errors.form ? <p className="form-alert" role="alert">{errors.form}</p> : null}
 
-        <button className="primary-button" disabled={isSubmitting} type="submit">
+        <button className="primary-button" disabled={isSubmitting} type="submit" style={{ marginTop: "1rem" }}>
           {isSubmitting ? <Loader2 aria-hidden="true" className="spinner" size={16} /> : <ArrowRight aria-hidden="true" size={16} />}
-          {isSubmitting ? "Entrando…" : "Entrar"}
+          {isSubmitting ? "Entrando…" : requiresTotp ? "Confirmar Código" : "Entrar"}
         </button>
 
-        <p className="signup-text">
-          Ainda não tem uma conta? <a href="mailto:contato@multempresas.local">Solicitar cadastro</a>
-        </p>
+        {requiresTotp && (
+          <button
+            type="button"
+            className="secondary-button"
+            style={{ width: "100%", marginTop: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+            onClick={() => {
+              setRequiresTotp(false);
+              setTotpCode("");
+              setErrors({});
+            }}
+          >
+            Voltar para o Login
+          </button>
+        )}
+
+        {!requiresTotp && (
+          <p className="signup-text">
+            Ainda não tem uma conta? <a href="mailto:contato@multempresas.local">Solicitar cadastro</a>
+          </p>
+        )}
       </form>
 
-      <div className="divider" aria-hidden="true">
-        <span />
-        <small>ou continue com</small>
-        <span />
-      </div>
+      {!requiresTotp && (
+        <>
+          <div className="divider" aria-hidden="true">
+            <span />
+            <small>ou continue com</small>
+            <span />
+          </div>
 
-      <button aria-label="Entrar com Google" className="google-button" type="button">
-        <GoogleIcon />
-        Google
-      </button>
+          <button aria-label="Entrar com Google" className="google-button" type="button">
+            <GoogleIcon />
+            Google
+          </button>
+        </>
+      )}
 
       <footer className="auth-footer">
         Ao continuar, você concorda com os <a href="#termos">Termos</a> e a <a href="#privacidade">Privacidade</a>.
