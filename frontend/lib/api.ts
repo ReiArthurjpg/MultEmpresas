@@ -55,6 +55,7 @@ export type TwoFactorSetupResponse = {
 export type User = {
   id: number;
   company_id: number | null;
+  company_name?: string | null;
   name: string;
   email: string;
   role: "MASTER" | "ADMIN" | "OPERATOR";
@@ -257,25 +258,209 @@ export async function deleteUser(accessToken: string, id: number) {
 }
 
 // ===========================================================================
-// TODO — Endpoints ainda sem implementação no frontend
-// Adicionar conforme os módulos forem construídos:
-//
-// COMPANIES (/companies/*)
-//   [ ] GET    /companies              → listCompanies()
-//   [ ] POST   /companies              → createCompany()
-//   [ ] GET    /companies/:id          → getCompany()
-//   [ ] PUT    /companies/:id          → updateCompany()
-//   [ ] DELETE /companies/:id          → deleteCompany()
-//   [ ] GET    /companies/cnpj/:cnpj   → lookupCNPJ()
-//   [ ] POST   /companies/:id/logo     → uploadCompanyLogo()
-//
-// PLANS (/plans/*)
-//   [ ] GET    /plans                  → listPlans()
-//   [ ] POST   /plans                  → createPlan()
-//   [ ] GET    /plans/:id              → getPlan()
-//   [ ] PUT    /plans/:id              → updatePlan()
-//   [ ] DELETE /plans/:id              → deletePlan()
-//
-// AUDIT (/audit-logs)
-//   [ ] GET    /audit-logs             → listAuditLogs()
+// DEFINIÇÕES DE TIPOS E CHAMADAS DE API — COMPANIES, PLANS, AUDIT
 // ===========================================================================
+
+export type Plan = {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  active: boolean;
+  permissions?: string[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Company = {
+  id: number;
+  company_id: number | null;
+  company_name: string;
+  trade_name: string | null;
+  cnpj: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip_code: string | null;
+  logo_url: string | null;
+  plan_id: number | null;
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type AuditLog = {
+  id: number;
+  company_id: number | null;
+  user_id: number | null;
+  action: string;
+  entity: string;
+  entity_id: number | null;
+  ip: string | null;
+  user_agent: string | null;
+  created_at: string;
+  user_name: string | null;
+  user_email: string | null;
+  company_name: string | null;
+};
+
+export type CreateCompanyPayload = {
+  company_name: string;
+  trade_name?: string | null;
+  cnpj: string;
+  email: string;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
+  plan_id?: number | null;
+  active?: boolean;
+};
+
+export type UpdateCompanyPayload = Partial<CreateCompanyPayload>;
+
+export type CreatePlanPayload = {
+  name: string;
+  description?: string | null;
+  price: number;
+  active?: boolean;
+  permissions?: string[];
+};
+
+export type UpdatePlanPayload = Partial<CreatePlanPayload>;
+
+// ---------------------------------------------------------------------------
+// COMPANIES (/companies/*)
+// ---------------------------------------------------------------------------
+
+/** GET /companies — Lista todas as empresas (MASTER vê tudo, ADMIN vê apenas a própria) */
+export async function listCompanies(accessToken: string) {
+  return request<{ data: Company[] }>("/companies", {
+    method: "GET",
+    headers: authHeaders(accessToken),
+  });
+}
+
+/** POST /companies — Cria uma nova empresa (Apenas MASTER) */
+export async function createCompany(accessToken: string, payload: CreateCompanyPayload) {
+  return request<{ id: number }>("/companies", {
+    method: "POST",
+    headers: authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+}
+
+/** GET /companies/:id — Detalha uma empresa (MASTER vê qualquer uma, ADMIN vê apenas a sua) */
+export async function getCompany(accessToken: string, id: number) {
+  return request<{ data: Company }>(`/companies/${id}`, {
+    method: "GET",
+    headers: authHeaders(accessToken),
+  });
+}
+
+/** PUT /companies/:id — Atualiza os dados de uma empresa (MASTER ou ADMIN) */
+export async function updateCompany(accessToken: string, id: number, payload: UpdateCompanyPayload) {
+  return request<{ message: string }>(`/companies/${id}`, {
+    method: "PUT",
+    headers: authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+}
+
+/** DELETE /companies/:id — Remove uma empresa (Apenas MASTER) */
+export async function deleteCompany(accessToken: string, id: number) {
+  return request<{ message: string }>(`/companies/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(accessToken),
+  });
+}
+
+/** GET /companies/cnpj/:cnpj — Consulta CNPJ em API externa (Apenas MASTER) */
+export async function lookupCNPJ(accessToken: string, cnpj: string) {
+  const cleanCnpj = cnpj.replace(/\D/g, "");
+  return request<{ data: any }>(`/companies/cnpj/${cleanCnpj}`, {
+    method: "GET",
+    headers: authHeaders(accessToken),
+  });
+}
+
+/** POST /companies/:id/logo — Envia e atualiza o logotipo de uma empresa (MASTER ou ADMIN) */
+export async function uploadCompanyLogo(accessToken: string, id: number, logoFile: File) {
+  const formData = new FormData();
+  formData.append("logo", logoFile);
+
+  const response = await fetch(`${API_URL}/companies/${id}/logo`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error ?? "Não foi possível enviar o logotipo.");
+  }
+  return data as { logo_url: string };
+}
+
+// ---------------------------------------------------------------------------
+// PLANS (/plans/*)
+// ---------------------------------------------------------------------------
+
+/** GET /plans — Lista todos os planos (MASTER) */
+export async function listPlans(accessToken: string) {
+  return request<{ data: Plan[] }>("/plans", {
+    method: "GET",
+    headers: authHeaders(accessToken),
+  });
+}
+
+/** POST /plans — Cria um novo plano com permissões (MASTER) */
+export async function createPlan(accessToken: string, payload: CreatePlanPayload) {
+  return request<{ id: number }>("/plans", {
+    method: "POST",
+    headers: authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+}
+
+/** GET /plans/:id — Detalha um plano (MASTER) */
+export async function getPlan(accessToken: string, id: number) {
+  return request<{ data: Plan }>(`/plans/${id}`, {
+    method: "GET",
+    headers: authHeaders(accessToken),
+  });
+}
+
+/** PUT /plans/:id — Atualiza dados e permissões do plano (MASTER) */
+export async function updatePlan(accessToken: string, id: number, payload: UpdatePlanPayload) {
+  return request<{ message: string }>(`/plans/${id}`, {
+    method: "PUT",
+    headers: authHeaders(accessToken),
+    body: JSON.stringify(payload),
+  });
+}
+
+/** DELETE /plans/:id — Remove um plano (MASTER) */
+export async function deletePlan(accessToken: string, id: number) {
+  return request<{ message: string }>(`/plans/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(accessToken),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// AUDIT (/audit-logs)
+// ---------------------------------------------------------------------------
+
+/** GET /audit-logs — Lista logs de auditoria (MASTER e ADMIN) */
+export async function listAuditLogs(accessToken: string) {
+  return request<{ data: AuditLog[] }>("/audit-logs", {
+    method: "GET",
+    headers: authHeaders(accessToken),
+  });
+}

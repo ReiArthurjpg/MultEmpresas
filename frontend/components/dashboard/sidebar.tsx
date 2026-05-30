@@ -1,10 +1,11 @@
 "use client";
 
 import {
+  Activity,
+  Award,
   Building2,
   LayoutDashboard,
   LogOut,
-  Settings,
   Shield,
   Users,
 } from "lucide-react";
@@ -15,7 +16,10 @@ export type DashboardTab =
   | "overview"
   | "users"
   | "2fa"
-  | "company";
+  | "company"
+  | "companies"
+  | "plans"
+  | "audit";
 
 type SidebarProps = {
   session: Session;
@@ -30,8 +34,11 @@ type SidebarProps = {
 const NAV_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; roles?: string[] }[] = [
   { tab: "overview", label: "Visão Geral", icon: LayoutDashboard },
   { tab: "users", label: "Usuários", icon: Users, roles: ["MASTER", "ADMIN"] },
+  { tab: "company", label: "Minha Empresa", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
+  { tab: "companies", label: "Empresas", icon: Building2, roles: ["MASTER"] },
+  { tab: "plans", label: "Planos", icon: Award, roles: ["MASTER"] },
+  { tab: "audit", label: "Auditoria", icon: Activity, roles: ["MASTER", "ADMIN"] },
   { tab: "2fa", label: "Segurança 2FA", icon: Shield },
-  { tab: "company", label: "Empresa", icon: Building2 },
 ];
 
 export function Sidebar({

@@ -13,6 +13,9 @@ import { OverviewTab } from "@/components/dashboard/overview-tab";
 import { UsersTab } from "@/components/dashboard/users-tab";
 import { TwoFATab } from "@/components/dashboard/twofa-tab";
 import { CompanyTab } from "@/components/dashboard/company-tab";
+import { CompaniesTab } from "@/components/dashboard/companies-tab";
+import { PlansTab } from "@/components/dashboard/plans-tab";
+import { AuditTab } from "@/components/dashboard/audit-tab";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -76,6 +79,9 @@ export default function DashboardPage() {
   }
 
   const canManageUsers = ["MASTER", "ADMIN"].includes(session.user.role);
+  const canManageCompanies = session.user.role === "MASTER";
+  const canManagePlans = session.user.role === "MASTER";
+  const canViewAudit = ["MASTER", "ADMIN"].includes(session.user.role);
 
   return (
     <div className="db-layout">
@@ -116,6 +122,36 @@ export default function DashboardPage() {
           )}
 
           {activeTab === "company" && <CompanyTab session={session} />}
+
+          {activeTab === "companies" && canManageCompanies && (
+            <CompaniesTab accessToken={session.accessToken} />
+          )}
+
+          {activeTab === "companies" && !canManageCompanies && (
+            <div className="empty-state">
+              <p>Apenas administradores globais podem gerenciar empresas.</p>
+            </div>
+          )}
+
+          {activeTab === "plans" && canManagePlans && (
+            <PlansTab accessToken={session.accessToken} />
+          )}
+
+          {activeTab === "plans" && !canManagePlans && (
+            <div className="empty-state">
+              <p>Apenas administradores globais podem gerenciar planos.</p>
+            </div>
+          )}
+
+          {activeTab === "audit" && canViewAudit && (
+            <AuditTab accessToken={session.accessToken} />
+          )}
+
+          {activeTab === "audit" && !canViewAudit && (
+            <div className="empty-state">
+              <p>Você não tem permissão para acessar o log de auditoria.</p>
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -22,8 +22,18 @@ final class AuditLogRepository extends BaseRepository
 
     public function all(array $actor): array
     {
-        [$where, $params] = $this->tenantWhere($actor);
-        $stmt = $this->pdo->prepare('SELECT * FROM audit_logs WHERE 1=1' . $where . ' ORDER BY id DESC LIMIT 500');
+        [$where, $params] = $this->tenantWhere($actor, 'a');
+        $sql = '
+            SELECT a.id, a.company_id, a.user_id, a.action, a.entity, a.entity_id, a.ip, a.user_agent, a.created_at,
+                   u.name AS user_name, u.email AS user_email,
+                   c.company_name
+            FROM audit_logs a
+            LEFT JOIN users u ON u.id = a.user_id
+            LEFT JOIN companies c ON c.id = a.company_id
+            WHERE 1=1' . $where . '
+            ORDER BY a.id DESC LIMIT 500
+        ';
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
