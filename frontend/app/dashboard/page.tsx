@@ -1,14 +1,27 @@
 "use client";
 
-import { LogOut, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { clearSession, getSession, logout, type Session } from "@/lib/api";
+import {
+  clearSession,
+  getSession,
+  logout,
+  type Session,
+} from "@/lib/api";
+import { Sidebar, type DashboardTab } from "@/components/dashboard/sidebar";
+import { OverviewTab } from "@/components/dashboard/overview-tab";
+import { UsersTab } from "@/components/dashboard/users-tab";
+import { TwoFATab } from "@/components/dashboard/twofa-tab";
+import { CompanyTab } from "@/components/dashboard/company-tab";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
+  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Mirror 2FA status locally so TwoFATab can toggle it without a full reload
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   useEffect(() => {
     const currentSession = getSession();
@@ -16,13 +29,12 @@ export default function DashboardPage() {
       router.replace("/");
       return;
     }
-
     setSession(currentSession);
+    setTwoFactorEnabled(currentSession.user.two_factor_enabled ?? false);
   }, [router]);
 
   async function handleLogout() {
     if (!session) return;
-
     setIsLoggingOut(true);
     try {
       await logout(session.accessToken);
@@ -33,49 +45,79 @@ export default function DashboardPage() {
     }
   }
 
+  function handle2FAStatusChange(enabled: boolean) {
+    setTwoFactorEnabled(enabled);
+    // Update persisted session so a page refresh reflects the new state
+    if (session) {
+      const updated: Session = {
+        ...session,
+        user: { ...session.user, two_factor_enabled: enabled },
+      };
+      setSession(updated);
+      // Re-persist
+      import("@/lib/api").then(({ saveSession }) => {
+        const stored =
+          window.localStorage.getItem("multempresas.session") !== null
+            ? "persistent"
+            : "session-only";
+        saveSession(updated, stored === "persistent");
+      });
+    }
+  }
+
+  // Loading state
   if (!session) {
     return (
-      <main className="dashboard-shell dashboard-loading">
+      <div className="db-loader" aria-live="polite" aria-busy="true">
+        <div className="db-loader__spinner" aria-hidden="true" />
         <p>Carregando dashboard…</p>
-      </main>
+      </div>
     );
   }
 
+  const canManageUsers = ["MASTER", "ADMIN"].includes(session.user.role);
+
   return (
-    <main className="dashboard-shell">
-      <section className="dashboard-card" aria-labelledby="dashboard-title">
-        <div className="dashboard-icon" aria-hidden="true">
-          <ShieldCheck size={28} />
+    <div className="db-layout">
+      <Sidebar
+        session={session}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed((c) => !c)}
+      />
+
+      <main
+        className="db-main"
+        id="main-content"
+        aria-label="Conteúdo principal"
+      >
+        <div className="db-main__inner">
+          {activeTab === "overview" && <OverviewTab session={session} />}
+
+          {activeTab === "users" && canManageUsers && (
+            <UsersTab accessToken={session.accessToken} />
+          )}
+
+          {activeTab === "users" && !canManageUsers && (
+            <div className="empty-state">
+              <p>Você não tem permissão para acessar esta seção.</p>
+            </div>
+          )}
+
+          {activeTab === "2fa" && (
+            <TwoFATab
+              accessToken={session.accessToken}
+              twoFactorEnabled={twoFactorEnabled}
+              onStatusChange={handle2FAStatusChange}
+            />
+          )}
+
+          {activeTab === "company" && <CompanyTab session={session} />}
         </div>
-
-        <div className="dashboard-copy">
-          <p className="auth-kicker">Dashboard</p>
-          <h1 id="dashboard-title">Olá, {session.user.name}</h1>
-          <p>
-            Login realizado com sucesso. Este é o painel inicial da {session.company?.name ?? "MultEmpresas"}.
-          </p>
-        </div>
-
-        <dl className="dashboard-details">
-          <div>
-            <dt>E-mail</dt>
-            <dd>{session.user.email}</dd>
-          </div>
-          <div>
-            <dt>Perfil</dt>
-            <dd>{session.user.role}</dd>
-          </div>
-          <div>
-            <dt>Empresa</dt>
-            <dd>{session.company?.name ?? "Conta master"}</dd>
-          </div>
-        </dl>
-
-        <button className="logout-button" onClick={handleLogout} disabled={isLoggingOut} type="button">
-          <LogOut size={16} />
-          {isLoggingOut ? "Saindo…" : "Sair"}
-        </button>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }
