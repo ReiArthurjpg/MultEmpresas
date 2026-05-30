@@ -262,7 +262,13 @@ export function LoginForm() {
             <span />
           </div>
 
-          <button aria-label="Entrar com Google" className="google-button" type="button">
+          <button 
+            aria-label="Entrar com Google" 
+            className="google-button" 
+            type="button"
+            disabled
+            style={{ cursor: "not-allowed", opacity: 0.5 }}
+          >
             <GoogleIcon />
             Google
           </button>
@@ -270,7 +276,22 @@ export function LoginForm() {
       )}
 
       <footer className="auth-footer">
-        Ao continuar, você concorda com os <a href="#termos">Termos</a> e a <a href="#privacidade">Privacidade</a>.
+        Ao continuar, você concorda com os{" "}
+        <a 
+          href="#termos" 
+          onClick={(e) => e.preventDefault()} 
+          style={{ cursor: "not-allowed", opacity: 0.5 }}
+        >
+          Termos
+        </a>{" "}
+        e a{" "}
+        <a 
+          href="#privacidade" 
+          onClick={(e) => e.preventDefault()} 
+          style={{ cursor: "not-allowed", opacity: 0.5 }}
+        >
+          Privacidade
+        </a>.
       </footer>
     </>
   );
