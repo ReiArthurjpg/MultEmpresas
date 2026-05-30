@@ -1,12 +1,12 @@
 # MultEmpresas
 
-Monorepo preparado para um SaaS multiempresa. A primeira entrega contém somente o backend PHP 8.3, independente de qualquer frontend.
+Monorepo preparado para um SaaS multiempresa com backend PHP 8.3 e frontend React/Next.js.
 
 ## Estrutura
 
 ```text
 backend/   API REST PHP + MySQL + Swagger + Docker
-frontend/  reservado para implementação futura
+frontend/  aplicação React/Next.js com login e dashboard inicial
 /docs      documentação do projeto
 ```
 
@@ -30,6 +30,26 @@ URLs:
 - Swagger: <http://localhost:8010/docs>
 - PhpMyAdmin: <http://localhost:8080>
 - MySQL: `localhost:3306`
+
+## Executar o Frontend
+
+A tela de login e o dashboard inicial ficam em `frontend/`:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+URLs:
+
+- Frontend: <http://localhost:3000>
+- API consumida pelo frontend: `NEXT_PUBLIC_API_URL` (padrão: <http://localhost:8010>)
+
+Endpoints usados pelo login:
+
+- `POST /auth/login` com `email`, `password` e opcionalmente `totp_code`.
+- `POST /auth/logout` com header `Authorization: Bearer <access_token>`.
 
 ## Usuário Master inicial
 
