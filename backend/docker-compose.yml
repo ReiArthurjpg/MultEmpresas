@@ -1,0 +1,70 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: multempresas-api
+    env_file:
+      - .env
+    volumes:
+      - ./:/var/www/backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - multempresas
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: multempresas-nginx
+    ports:
+      - "8010:80"
+    volumes:
+      - ./:/var/www/backend:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+    networks:
+      - multempresas
+
+  mysql:
+    image: mysql:8.0
+    container_name: multempresas-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-multempresas}
+      MYSQL_USER: ${DB_USERNAME:-multempresas}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-multempresas_secret}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - multempresas
+
+  phpmyadmin:
+    image: phpmyadmin:5.2-apache
+    container_name: multempresas-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - multempresas
+
+volumes:
+  mysql_data:
+
+networks:
+  multempresas:
+    driver: bridge

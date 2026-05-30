@@ -1,0 +1,90 @@
+CREATE TABLE IF NOT EXISTS plans (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  description TEXT NULL,
+  price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS plan_permissions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  plan_id BIGINT UNSIGNED NOT NULL,
+  permission VARCHAR(80) NOT NULL,
+  UNIQUE KEY uq_plan_permission (plan_id, permission),
+  CONSTRAINT fk_plan_permissions_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS companies (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  company_id BIGINT UNSIGNED NULL,
+  company_name VARCHAR(180) NOT NULL,
+  trade_name VARCHAR(180) NULL,
+  cnpj VARCHAR(20) NOT NULL UNIQUE,
+  email VARCHAR(180) NOT NULL,
+  phone VARCHAR(40) NULL,
+  address VARCHAR(255) NULL,
+  city VARCHAR(120) NULL,
+  state CHAR(2) NULL,
+  zip_code VARCHAR(20) NULL,
+  logo_url VARCHAR(255) NULL,
+  plan_id BIGINT UNSIGNED NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL,
+  INDEX idx_companies_company_id (company_id),
+  CONSTRAINT fk_companies_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  company_id BIGINT UNSIGNED NULL,
+  name VARCHAR(160) NOT NULL,
+  email VARCHAR(180) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  role ENUM('MASTER','ADMIN','OPERATOR') NOT NULL,
+  avatar VARCHAR(255) NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  two_factor_enabled TINYINT(1) NOT NULL DEFAULT 0,
+  two_factor_secret VARCHAR(64) NULL,
+  must_change_password TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL,
+  INDEX idx_users_company_role (company_id, role),
+  CONSTRAINT fk_users_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  revoked_at TIMESTAMP NULL,
+  created_at TIMESTAMP NULL,
+  INDEX idx_refresh_user (user_id),
+  CONSTRAINT fk_refresh_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  ip VARCHAR(64) NOT NULL,
+  success TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_login_attempts_ip_created (ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  company_id BIGINT UNSIGNED NULL,
+  user_id BIGINT UNSIGNED NULL,
+  action VARCHAR(80) NOT NULL,
+  entity VARCHAR(120) NOT NULL,
+  entity_id BIGINT UNSIGNED NULL,
+  ip VARCHAR(64) NULL,
+  user_agent VARCHAR(255) NULL,
+  created_at TIMESTAMP NULL,
+  INDEX idx_audit_company_created (company_id, created_at),
+  CONSTRAINT fk_audit_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
+  CONSTRAINT fk_audit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
