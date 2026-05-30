@@ -10,7 +10,7 @@ import {
   UserX,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   createUser,
   deleteUser,
@@ -31,12 +31,6 @@ const ROLE_LABELS: Record<User["role"], string> = {
   OPERATOR: "Operador",
 };
 
-const ROLE_COLORS: Record<User["role"], string> = {
-  MASTER: "badge--master",
-  ADMIN: "badge--admin",
-  OPERATOR: "badge--operator",
-};
-
 type ModalMode = "create" | "edit";
 
 type UserForm = {
@@ -55,14 +49,325 @@ const EMPTY_FORM: UserForm = {
   must_change_password: true,
 };
 
-/**
- * Normaliza qualquer shape de resposta da API para um array de User.
- * O backend pode retornar:
- *   - User[]                      (array direto)
- *   - { data: User[] }            (envelope Laravel-style)
- *   - { users: User[] }           (envelope custom)
- *   - { items: User[] }           (envelope alternativo)
- */
+const styles = {
+  dashboard: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.5rem",
+    width: "100%",
+  },
+  hero: {
+    position: "relative",
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 320px)",
+    gap: "1.5rem",
+    overflow: "hidden",
+    padding: "2rem",
+    border: "1px solid rgba(16, 185, 129, 0.16)",
+    borderRadius: "28px",
+    background:
+      "radial-gradient(circle at 8% 20%, rgba(16, 185, 129, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(59, 130, 246, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f9fbf9 52%, #f5f8ff 100%)",
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.06)",
+  },
+  heroContent: {
+    position: "relative",
+    zIndex: 1,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    gap: "1.25rem",
+    minHeight: "160px",
+  },
+  eyebrow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    width: "fit-content",
+    padding: "0.4rem 0.7rem",
+    border: "1px solid rgba(16, 185, 129, 0.16)",
+    borderRadius: "999px",
+    background: "rgba(255, 255, 255, 0.8)",
+    color: "#059669",
+    fontSize: "0.72rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  title: {
+    margin: 0,
+    color: "#0f172a",
+    fontSize: "clamp(2.15rem, 4vw, 3.2rem)",
+    fontWeight: 850,
+    letterSpacing: "-0.05em",
+    lineHeight: 0.95,
+  },
+  subtitle: {
+    maxWidth: "600px",
+    margin: "0.5rem 0 0",
+    color: "#475569",
+    fontSize: "0.95rem",
+    lineHeight: 1.6,
+  },
+  heroAside: {
+    position: "relative",
+    zIndex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    justifyContent: "center",
+  },
+  statsRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "0.75rem",
+  },
+  statCard: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.25rem",
+    padding: "0.85rem 1rem",
+    border: "1px solid rgba(255, 255, 255, 0.8)",
+    borderRadius: "18px",
+    background: "rgba(255, 255, 255, 0.65)",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+    backdropFilter: "blur(12px)",
+  },
+  statLabel: {
+    color: "#64748b",
+    fontSize: "0.68rem",
+    fontWeight: 800,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+  },
+  statValue: {
+    color: "#0f172a",
+    fontSize: "1.4rem",
+    fontWeight: 850,
+    lineHeight: 1.1,
+  },
+  actionsRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    marginTop: "0.5rem",
+  },
+  tableContainer: {
+    overflow: "hidden",
+    border: "1px solid #eef2f6",
+    borderRadius: "24px",
+    background: "#ffffff",
+    boxShadow: "0 16px 48px rgba(15, 23, 42, 0.04)",
+    marginTop: "0.5rem",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    textAlign: "left",
+  },
+  th: {
+    padding: "1.1rem 1.5rem",
+    background: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+    color: "#475569",
+    fontSize: "0.75rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  tr: {
+    borderBottom: "1px solid #f1f5f9",
+    transition: "all 0.2s ease",
+  },
+  td: {
+    padding: "1rem 1.5rem",
+    verticalAlign: "middle",
+    color: "#334155",
+    fontSize: "0.9rem",
+  },
+  avatar: {
+    width: "40px",
+    height: "40px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "14px",
+    fontWeight: 850,
+    fontSize: "0.95rem",
+  },
+  userCell: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.85rem",
+  },
+  userName: {
+    fontWeight: 800,
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  warnLabel: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.25rem",
+    marginTop: "0.15rem",
+    color: "#d97706",
+    fontSize: "0.75rem",
+    fontWeight: 700,
+  },
+  modalBackdrop: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 999,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "1.5rem",
+    background: "rgba(15, 23, 42, 0.4)",
+    backdropFilter: "blur(8px)",
+  },
+  modal: {
+    width: "100%",
+    maxWidth: "520px",
+    overflow: "hidden",
+    borderRadius: "28px",
+    background: "#ffffff",
+    border: "1px solid rgba(226, 232, 240, 0.8)",
+    boxShadow: "0 32px 80px rgba(15, 23, 42, 0.18)",
+  },
+  modalHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "1.5rem 1.75rem",
+    borderBottom: "1px solid #f1f5f9",
+    background: "linear-gradient(to right, #ffffff, #fcfdfe)",
+  },
+  modalTitle: {
+    margin: 0,
+    color: "#0f172a",
+    fontSize: "1.25rem",
+    fontWeight: 850,
+    letterSpacing: "-0.02em",
+  },
+  modalBody: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1.25rem",
+    padding: "1.75rem",
+  },
+  modalFooter: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "0.75rem",
+    padding: "1.25rem 1.75rem",
+    borderTop: "1px solid #f1f5f9",
+    background: "#fafbfe",
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.4rem",
+  },
+  label: {
+    color: "#334155",
+    fontSize: "0.78rem",
+    fontWeight: 800,
+    letterSpacing: "0.02em",
+    textTransform: "uppercase",
+  },
+  input: {
+    width: "100%",
+    padding: "0.75rem 1rem",
+    borderRadius: "12px",
+    border: "1px solid #cbd5e1",
+    background: "#ffffff",
+    color: "#0f172a",
+    fontSize: "0.92rem",
+    fontWeight: 500,
+    outline: "none",
+    transition: "all 0.15s ease",
+  },
+} satisfies Record<string, CSSProperties>;
+
+const PILL_STYLES: Record<string, CSSProperties> = {
+  master: {
+    background: "rgba(124, 58, 237, 0.08)",
+    border: "1px solid rgba(124, 58, 237, 0.18)",
+    color: "#6d28d9",
+  },
+  admin: {
+    background: "rgba(37, 99, 235, 0.08)",
+    border: "1px solid rgba(37, 99, 235, 0.18)",
+    color: "#2563eb",
+  },
+  operator: {
+    background: "rgba(16, 185, 129, 0.08)",
+    border: "1px solid rgba(16, 185, 129, 0.18)",
+    color: "#059669",
+  },
+  active: {
+    background: "rgba(16, 185, 129, 0.08)",
+    border: "1px solid rgba(16, 185, 129, 0.18)",
+    color: "#059669",
+  },
+  inactive: {
+    background: "rgba(239, 68, 68, 0.08)",
+    border: "1px solid rgba(239, 68, 68, 0.18)",
+    color: "#dc2626",
+  },
+  "2fa-on": {
+    background: "rgba(16, 185, 129, 0.08)",
+    border: "1px solid rgba(16, 185, 129, 0.18)",
+    color: "#059669",
+  },
+  "2fa-off": {
+    background: "rgba(100, 116, 139, 0.08)",
+    border: "1px solid rgba(100, 116, 139, 0.18)",
+    color: "#475569",
+  },
+};
+
+const badgeBaseStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "0.35rem",
+  padding: "0.32rem 0.65rem",
+  borderRadius: "999px",
+  fontSize: "0.72rem",
+  fontWeight: 850,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  whiteSpace: "nowrap",
+};
+
+const AVATAR_THEMES: Record<string, { bg: string; color: string }> = {
+  MASTER: { bg: "linear-gradient(135deg, #7c3aed, #a78bfa)", color: "#ffffff" },
+  ADMIN: { bg: "linear-gradient(135deg, #2563eb, #60a5fa)", color: "#ffffff" },
+  OPERATOR: { bg: "linear-gradient(135deg, #0f172a, #334155)", color: "#ffffff" },
+};
+
+const actionBtnStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "10px",
+  border: "1px solid #e2e8f0",
+  background: "#ffffff",
+  color: "#475569",
+  cursor: "pointer",
+  transition: "all 0.15s ease",
+};
+
+const actionBtnDangerStyle: CSSProperties = {
+  ...actionBtnStyle,
+  color: "#ef4444",
+  borderColor: "rgba(239, 68, 68, 0.15)",
+  background: "rgba(239, 68, 68, 0.02)",
+};
+
 function normalizeUsersResponse(raw: unknown): User[] {
   if (Array.isArray(raw)) return raw as User[];
 
@@ -106,7 +411,9 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     }
   }, [accessToken]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
     if (modalMode) {
@@ -146,9 +453,18 @@ export function UsersTab({ accessToken }: UsersTabProps) {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { setFormError("Nome é obrigatório."); return; }
-    if (!form.email.trim()) { setFormError("E-mail é obrigatório."); return; }
-    if (modalMode === "create" && !form.password) { setFormError("Senha é obrigatória."); return; }
+    if (!form.name.trim()) {
+      setFormError("Nome é obrigatório.");
+      return;
+    }
+    if (!form.email.trim()) {
+      setFormError("E-mail é obrigatório.");
+      return;
+    }
+    if (modalMode === "create" && !form.password) {
+      setFormError("Senha é obrigatória.");
+      return;
+    }
 
     setSaving(true);
     setFormError(null);
@@ -196,153 +512,395 @@ export function UsersTab({ accessToken }: UsersTabProps) {
   }
 
   return (
-    <section className="tab-section" aria-labelledby="users-tab-title">
+    <section
+      className="tab-section overview-dashboard"
+      style={styles.dashboard}
+      aria-labelledby="users-tab-title"
+    >
+      <style>{`
+        .table-row-hover:hover {
+          background-color: #f8fafc !important;
+          transform: translateY(-1px);
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {/* Header */}
-      <div className="tab-header">
-        <div>
-          <h2 id="users-tab-title" className="tab-title">Usuários</h2>
-          <p className="tab-subtitle">Gerencie os usuários da plataforma.</p>
+      <div className="overview-hero-card" style={styles.hero}>
+        <div style={styles.heroContent}>
+          <div style={styles.eyebrow}>
+            <UserCheck size={14} aria-hidden="true" />
+            Controle de acesso
+          </div>
+          <div>
+            <h2 id="users-tab-title" style={styles.title}>
+              Usuários
+            </h2>
+            <p style={styles.subtitle}>
+              Gerencie a equipe, atribua perfis de acesso, audite segurança e monitore status de ativação em tempo real.
+            </p>
+          </div>
         </div>
-        <div className="tab-header__actions">
-          <button
-            className="icon-button"
-            onClick={fetchUsers}
-            disabled={loading}
-            type="button"
-            aria-label="Recarregar lista"
-          >
-            <RefreshCw size={16} className={cn(loading && "spinner")} aria-hidden="true" />
-          </button>
-          <button
-            className="primary-button tab-cta"
-            onClick={openCreate}
-            type="button"
-            id="btn-create-user"
-          >
-            <Plus size={16} aria-hidden="true" /> Novo usuário
-          </button>
-        </div>
+
+        <aside className="overview-hero-aside" style={styles.heroAside}>
+          <div style={styles.statsRow}>
+            <div style={styles.statCard}>
+              <span style={styles.statLabel}>Total</span>
+              <strong style={styles.statValue}>{users.length}</strong>
+            </div>
+            <div style={styles.statCard}>
+              <span style={styles.statLabel}>Ativos</span>
+              <strong style={styles.statValue}>
+                {users.filter((u) => u.active).length}
+              </strong>
+            </div>
+          </div>
+
+          <div style={styles.actionsRow}>
+            <button
+              className="secondary-button"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.58rem 0.82rem",
+                borderRadius: "12px",
+                fontSize: "0.78rem",
+                fontWeight: 850,
+                cursor: "pointer",
+                flex: 1,
+                justifyContent: "center",
+                border: "1px solid #cbd5e1",
+                background: "#ffffff",
+                color: "#334155",
+              }}
+              onClick={fetchUsers}
+              disabled={loading}
+              type="button"
+              aria-label="Recarregar lista"
+            >
+              <RefreshCw size={14} className={cn(loading && "spinner")} aria-hidden="true" />
+              Atualizar
+            </button>
+            <button
+              className="primary-button"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.58rem 1rem",
+                borderRadius: "12px",
+                fontSize: "0.78rem",
+                fontWeight: 850,
+                cursor: "pointer",
+                flex: 1.3,
+                justifyContent: "center",
+                background: "linear-gradient(135deg, #059669, #10b981)",
+                color: "#ffffff",
+                border: "none",
+                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
+              }}
+              onClick={openCreate}
+              type="button"
+              id="btn-create-user"
+            >
+              <Plus size={16} aria-hidden="true" /> Novo usuário
+            </button>
+          </div>
+        </aside>
       </div>
 
       {/* Error banner */}
       {error && (
-        <p className="form-alert" role="alert">{error}</p>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            padding: "1rem 1.25rem",
+            borderRadius: "16px",
+            background: "rgba(239, 68, 68, 0.08)",
+            border: "1px solid rgba(239, 68, 68, 0.18)",
+            color: "#dc2626",
+            fontSize: "0.9rem",
+            fontWeight: 600,
+          }}
+          role="alert"
+        >
+          <X size={16} />
+          {error}
+        </div>
       )}
 
       {/* Table */}
       {loading ? (
-        <div className="loading-state" aria-live="polite" aria-busy="true">
-          <Loader2 size={24} className="spinner" aria-hidden="true" />
-          <span>Carregando usuários…</span>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "1rem",
+            padding: "4rem 2rem",
+            background: "#ffffff",
+            border: "1px solid #eef2f6",
+            borderRadius: "24px",
+            color: "#64748b",
+          }}
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <Loader2 size={32} className="spinner" aria-hidden="true" style={{ color: "#059669" }} />
+          <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>Carregando usuários…</span>
         </div>
       ) : users.length === 0 ? (
-        <div className="empty-state">
-          <UserX size={40} aria-hidden="true" />
-          <p>Nenhum usuário encontrado.</p>
-          <button className="primary-button" onClick={openCreate} type="button">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "1.25rem",
+            padding: "4rem 2rem",
+            background: "#ffffff",
+            border: "1px solid #eef2f6",
+            borderRadius: "24px",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: "64px",
+              height: "64px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "20px",
+              background: "rgba(100, 116, 139, 0.08)",
+              color: "#64748b",
+            }}
+          >
+            <UserX size={32} aria-hidden="true" />
+          </div>
+          <div>
+            <h4 style={{ margin: 0, color: "#0f172a", fontSize: "1.1rem", fontWeight: 800 }}>
+              Nenhum usuário encontrado
+            </h4>
+            <p style={{ margin: "0.25rem 0 0", color: "#64748b", fontSize: "0.9rem" }}>
+              Comece criando o primeiro usuário da sua plataforma.
+            </p>
+          </div>
+          <button
+            className="primary-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              padding: "0.6rem 1.2rem",
+              borderRadius: "12px",
+              fontSize: "0.85rem",
+              fontWeight: 800,
+              cursor: "pointer",
+              background: "linear-gradient(135deg, #059669, #10b981)",
+              color: "#ffffff",
+              border: "none",
+            }}
+            onClick={openCreate}
+            type="button"
+          >
             <Plus size={14} aria-hidden="true" /> Criar primeiro usuário
           </button>
         </div>
       ) : (
-        <div className="table-wrapper" role="region" aria-label="Lista de usuários" tabIndex={0}>
-          <table className="data-table">
+        <div style={styles.tableContainer} role="region" aria-label="Lista de usuários" tabIndex={0}>
+          <table style={styles.table}>
             <thead>
               <tr>
-                <th scope="col">Nome</th>
-                <th scope="col">E-mail</th>
-                <th scope="col">Perfil</th>
-                <th scope="col">Status</th>
-                <th scope="col">2FA</th>
-                <th scope="col"><span className="sr-only">Ações</span></th>
+                <th scope="col" style={styles.th}>Nome</th>
+                <th scope="col" style={styles.th}>E-mail</th>
+                <th scope="col" style={styles.th}>Perfil</th>
+                <th scope="col" style={styles.th}>Status</th>
+                <th scope="col" style={styles.th}>2FA</th>
+                <th scope="col" style={{ ...styles.th, textAlign: "right" }}><span className="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <div className="user-cell">
-                      <div className="user-cell__avatar" aria-hidden="true">
-                        {user.name.charAt(0).toUpperCase()}
+              {users.map((user) => {
+                const avatarTheme = AVATAR_THEMES[user.role] ?? AVATAR_THEMES.OPERATOR;
+                return (
+                  <tr key={user.id} style={styles.tr} className="table-row-hover">
+                    <td style={styles.td}>
+                      <div style={styles.userCell}>
+                        <div
+                          style={{
+                            ...styles.avatar,
+                            background: avatarTheme.bg,
+                            color: avatarTheme.color,
+                          }}
+                          aria-hidden="true"
+                        >
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={styles.userName}>{user.name}</div>
+                          {user.must_change_password && (
+                            <div style={styles.warnLabel}>
+                              <span style={{ fontSize: "0.8rem" }}>🔑</span> Troca de senha pendente
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <div className="user-cell__name">{user.name}</div>
-                        {user.must_change_password && (
-                          <div className="user-cell__warn">Troca de senha pendente</div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="td-email">{user.email}</td>
-                  <td>
-                    <span className={cn("badge", ROLE_COLORS[user.role])}>
-                      {ROLE_LABELS[user.role]}
-                    </span>
-                  </td>
-                  <td>
-                    {user.active ? (
-                      <span className="status-chip status-chip--active">
-                        <UserCheck size={12} aria-hidden="true" /> Ativo
-                      </span>
-                    ) : (
-                      <span className="status-chip status-chip--inactive">
-                        <UserX size={12} aria-hidden="true" /> Inativo
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {user.two_factor_enabled ? (
-                      <span className="status-chip status-chip--2fa">ON</span>
-                    ) : (
-                      <span className="status-chip status-chip--off">OFF</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="row-actions">
-                      <button
-                        className="icon-button"
-                        onClick={() => openEdit(user)}
-                        type="button"
-                        aria-label={`Editar ${user.name}`}
+                    </td>
+                    <td style={{ ...styles.td, color: "#64748b", fontWeight: 500 }}>{user.email}</td>
+                    <td style={styles.td}>
+                      <span
+                        style={{
+                          ...badgeBaseStyle,
+                          ...(PILL_STYLES[user.role.toLowerCase()] ?? PILL_STYLES.operator),
+                        }}
                       >
-                        <Edit2 size={15} aria-hidden="true" />
-                      </button>
-                      {confirmDeleteId === user.id ? (
-                        <div className="confirm-delete">
-                          <span>Excluir?</span>
-                          <button
-                            className="icon-button icon-button--danger"
-                            onClick={() => handleDelete(user.id)}
-                            disabled={deletingId === user.id}
-                            type="button"
-                            aria-label="Confirmar exclusão"
+                        {ROLE_LABELS[user.role]}
+                      </span>
+                    </td>
+                    <td style={styles.td}>
+                      {user.active ? (
+                        <span
+                          style={{
+                            ...badgeBaseStyle,
+                            ...PILL_STYLES.active,
+                          }}
+                        >
+                          <UserCheck size={12} aria-hidden="true" /> Ativo
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            ...badgeBaseStyle,
+                            ...PILL_STYLES.inactive,
+                          }}
+                        >
+                          <UserX size={12} aria-hidden="true" /> Inativo
+                        </span>
+                      )}
+                    </td>
+                    <td style={styles.td}>
+                      {user.two_factor_enabled ? (
+                        <span
+                          style={{
+                            ...badgeBaseStyle,
+                            ...PILL_STYLES["2fa-on"],
+                          }}
+                        >
+                          ON
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            ...badgeBaseStyle,
+                            ...PILL_STYLES["2fa-off"],
+                          }}
+                        >
+                          OFF
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ ...styles.td, textAlign: "right" }}>
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          justifyContent: "flex-end",
+                        }}
+                      >
+                        <button
+                          className="icon-button"
+                          style={actionBtnStyle}
+                          onClick={() => openEdit(user)}
+                          type="button"
+                          aria-label={`Editar ${user.name}`}
+                        >
+                          <Edit2 size={14} aria-hidden="true" />
+                        </button>
+                        {confirmDeleteId === user.id ? (
+                          <div
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.35rem",
+                              background: "#fef2f2",
+                              border: "1px solid #fee2e2",
+                              padding: "0.25rem 0.5rem",
+                              borderRadius: "10px",
+                              animation: "fadeIn 0.15s ease",
+                            }}
                           >
-                            {deletingId === user.id
-                              ? <Loader2 size={14} className="spinner" />
-                              : <Trash2 size={14} />}
-                          </button>
+                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.15rem" }}>
+                              Excluir?
+                            </span>
+                            <button
+                              className="icon-button"
+                              style={{
+                                ...actionBtnDangerStyle,
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "6px",
+                                border: "none",
+                                background: "#ef4444",
+                                color: "#ffffff",
+                              }}
+                              onClick={() => handleDelete(user.id)}
+                              disabled={deletingId === user.id}
+                              type="button"
+                              aria-label="Confirmar exclusão"
+                            >
+                              {deletingId === user.id ? (
+                                <Loader2 size={12} className="spinner" />
+                              ) : (
+                                <Trash2 size={12} />
+                              )}
+                            </button>
+                            <button
+                              className="icon-button"
+                              style={{
+                                ...actionBtnStyle,
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "6px",
+                                border: "none",
+                                background: "#e2e8f0",
+                                color: "#475569",
+                              }}
+                              onClick={() => setConfirmDeleteId(null)}
+                              type="button"
+                              aria-label="Cancelar exclusão"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
                           <button
                             className="icon-button"
-                            onClick={() => setConfirmDeleteId(null)}
+                            style={actionBtnDangerStyle}
+                            onClick={() => setConfirmDeleteId(user.id)}
                             type="button"
-                            aria-label="Cancelar exclusão"
+                            aria-label={`Excluir ${user.name}`}
                           >
-                            <X size={14} />
+                            <Trash2 size={14} aria-hidden="true" />
                           </button>
-                        </div>
-                      ) : (
-                        <button
-                          className="icon-button icon-button--danger"
-                          onClick={() => setConfirmDeleteId(user.id)}
-                          type="button"
-                          aria-label={`Excluir ${user.name}`}
-                        >
-                          <Trash2 size={15} aria-hidden="true" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -351,35 +909,48 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       {/* Modal */}
       {modalMode && (
         <div
-          className="modal-backdrop"
+          style={styles.modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
-          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
         >
-          <div className="modal">
-            <div className="modal__header">
-              <h3 id="modal-title" className="modal__title">
-                {modalMode === "create" ? "Novo Usuário" : "Editar Usuário"}
+          <div style={styles.modal}>
+            <div style={styles.modalHeader}>
+              <h3 id="modal-title" style={styles.modalTitle}>
+                {modalMode === "create" ? "✨ Novo Usuário" : "✍️ Editar Usuário"}
               </h3>
               <button
                 className="icon-button"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
                 onClick={closeModal}
                 type="button"
                 aria-label="Fechar modal"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <div className="modal__body">
-              <div className="field-group">
-                <label htmlFor="user-name">Nome completo</label>
+            <div style={styles.modalBody}>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="user-name" style={styles.label}>Nome completo</label>
                 <input
                   ref={firstInputRef}
                   id="user-name"
-                  className="form-input"
-                  style={{ paddingLeft: "1rem" }}
+                  style={styles.input}
                   value={form.name}
                   onChange={(e) => updateField("name", e.target.value)}
                   placeholder="Ex: João Silva"
@@ -387,12 +958,11 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                 />
               </div>
 
-              <div className="field-group">
-                <label htmlFor="user-email">E-mail</label>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="user-email" style={styles.label}>E-mail</label>
                 <input
                   id="user-email"
-                  className="form-input"
-                  style={{ paddingLeft: "1rem" }}
+                  style={styles.input}
                   type="email"
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
@@ -401,14 +971,13 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                 />
               </div>
 
-              <div className="field-group">
-                <label htmlFor="user-password">
+              <div style={styles.fieldGroup}>
+                <label htmlFor="user-password" style={styles.label}>
                   {modalMode === "edit" ? "Nova senha (deixe em branco para manter)" : "Senha"}
                 </label>
                 <input
                   id="user-password"
-                  className="form-input"
-                  style={{ paddingLeft: "1rem" }}
+                  style={styles.input}
                   type="password"
                   value={form.password}
                   onChange={(e) => updateField("password", e.target.value)}
@@ -417,12 +986,19 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                 />
               </div>
 
-              <div className="field-group">
-                <label htmlFor="user-role">Perfil de acesso</label>
+              <div style={styles.fieldGroup}>
+                <label htmlFor="user-role" style={styles.label}>Perfil de acesso</label>
                 <select
                   id="user-role"
-                  className="form-input form-select"
-                  style={{ paddingLeft: "1rem" }}
+                  style={{
+                    ...styles.input,
+                    appearance: "none",
+                    backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 1rem center",
+                    backgroundSize: "1.2rem",
+                    paddingRight: "2.5rem",
+                  }}
                   value={form.role}
                   onChange={(e) => updateField("role", e.target.value as User["role"])}
                 >
@@ -432,23 +1008,69 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                 </select>
               </div>
 
-              <label className="checkbox-label">
+              <label
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  cursor: "pointer",
+                  marginTop: "0.5rem",
+                  userSelect: "none",
+                }}
+              >
                 <input
                   type="checkbox"
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    cursor: "pointer",
+                  }}
                   checked={form.must_change_password}
                   onChange={(e) => updateField("must_change_password", e.target.checked)}
                 />
-                <span>Exigir troca de senha no próximo login</span>
+                <span style={{ fontSize: "0.9rem", color: "#334155", fontWeight: 600 }}>
+                  Exigir troca de senha no próximo login
+                </span>
               </label>
 
               {formError && (
-                <p className="form-alert" role="alert">{formError}</p>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "12px",
+                    background: "rgba(239, 68, 68, 0.06)",
+                    border: "1px solid rgba(239, 68, 68, 0.15)",
+                    color: "#dc2626",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    marginTop: "0.5rem",
+                  }}
+                  role="alert"
+                >
+                  <X size={14} />
+                  {formError}
+                </div>
               )}
             </div>
 
-            <div className="modal__footer">
+            <div style={styles.modalFooter}>
               <button
                 className="secondary-button"
+                style={{
+                  padding: "0.6rem 1.2rem",
+                  borderRadius: "12px",
+                  fontSize: "0.85rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  color: "#334155",
+                }}
                 onClick={closeModal}
                 type="button"
               >
@@ -456,14 +1078,35 @@ export function UsersTab({ accessToken }: UsersTabProps) {
               </button>
               <button
                 className="primary-button"
+                style={{
+                  padding: "0.6rem 1.5rem",
+                  borderRadius: "12px",
+                  fontSize: "0.85rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  background: "linear-gradient(135deg, #059669, #10b981)",
+                  color: "#ffffff",
+                  border: "none",
+                  boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                }}
                 onClick={handleSave}
                 disabled={saving}
                 type="button"
                 id="btn-save-user"
               >
-                {saving
-                  ? <><Loader2 size={14} className="spinner" aria-hidden="true" /> Salvando…</>
-                  : modalMode === "create" ? "Criar usuário" : "Salvar alterações"}
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="spinner" aria-hidden="true" />
+                    Salvando…
+                  </>
+                ) : modalMode === "create" ? (
+                  "Criar usuário"
+                ) : (
+                  "Salvar alterações"
+                )}
               </button>
             </div>
           </div>
