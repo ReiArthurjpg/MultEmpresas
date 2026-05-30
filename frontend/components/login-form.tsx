@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import { login, saveSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 type FormErrors = {
   email?: string;
@@ -92,98 +93,145 @@ export function LoginForm() {
   return (
     <>
       <form className="login-form" onSubmit={handleSubmit} noValidate>
-        {!requiresTotp ? (
-          <>
-            <div className="field-group">
-              <label htmlFor="email">E-mail</label>
-              <div className="input-shell">
-                <Mail aria-hidden="true" className="input-icon" size={18} />
-                <input
-                  aria-describedby={visibleEmailError ? "email-error" : undefined}
-                  aria-invalid={Boolean(visibleEmailError)}
-                  autoComplete="email"
-                  className={cn("form-input", visibleEmailError && "input-error")}
-                  id="email"
-                  inputMode="email"
-                  onChange={(event) => updateEmail(event.target.value)}
-                  placeholder="seu@email.com"
-                  type="email"
-                  value={email}
-                />
+        <AnimatePresence mode="wait">
+          {!requiresTotp ? (
+            <motion.div
+              key="login-fields"
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 16 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              style={{ display: "flex", flexDirection: "column", gap: "1.125rem" }}
+            >
+              <div className="field-group">
+                <label htmlFor="email">E-mail</label>
+                <div className="input-shell">
+                  <Mail aria-hidden="true" className="input-icon" size={18} />
+                  <input
+                    aria-describedby={visibleEmailError ? "email-error" : undefined}
+                    aria-invalid={Boolean(visibleEmailError)}
+                    autoComplete="email"
+                    className={cn("form-input", visibleEmailError && "input-error")}
+                    id="email"
+                    inputMode="email"
+                    onChange={(event) => updateEmail(event.target.value)}
+                    placeholder="seu@email.com"
+                    type="email"
+                    value={email}
+                  />
+                </div>
+                {visibleEmailError ? (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    id="email-error"
+                    role="alert"
+                  >
+                    {visibleEmailError}
+                  </motion.p>
+                ) : null}
               </div>
-              {visibleEmailError ? <p id="email-error" role="alert">{visibleEmailError}</p> : null}
-            </div>
 
-            <div className="field-group">
-              <label htmlFor="password">Senha</label>
-              <div className="input-shell">
-                <Lock aria-hidden="true" className="input-icon" size={18} />
-                <input
-                  aria-describedby={visiblePasswordError ? "password-error" : undefined}
-                  aria-invalid={Boolean(visiblePasswordError)}
-                  autoComplete="current-password"
-                  className={cn("form-input password-input", visiblePasswordError && "input-error")}
-                  id="password"
-                  onChange={(event) => updatePassword(event.target.value)}
-                  placeholder="••••••••"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                />
-                <button
-                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  className="password-toggle"
-                  onClick={() => setShowPassword((current) => !current)}
-                  type="button"
+              <div className="field-group">
+                <label htmlFor="password">Senha</label>
+                <div className="input-shell">
+                  <Lock aria-hidden="true" className="input-icon" size={18} />
+                  <input
+                    aria-describedby={visiblePasswordError ? "password-error" : undefined}
+                    aria-invalid={Boolean(visiblePasswordError)}
+                    autoComplete="current-password"
+                    className={cn("form-input password-input", visiblePasswordError && "input-error")}
+                    id="password"
+                    onChange={(event) => updatePassword(event.target.value)}
+                    placeholder="••••••••"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                  />
+                  <button
+                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    className="password-toggle"
+                    onClick={() => setShowPassword((current) => !current)}
+                    type="button"
+                  >
+                    {showPassword ? <EyeOff aria-hidden="true" size={18} /> : <Eye aria-hidden="true" size={18} />}
+                  </button>
+                </div>
+                {visiblePasswordError ? (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    id="password-error"
+                    role="alert"
+                  >
+                    {visiblePasswordError}
+                  </motion.p>
+                ) : null}
+              </div>
+
+              <div className="form-options">
+                <label className="checkbox-label" htmlFor="rememberMe">
+                  <input
+                    checked={rememberMe}
+                    id="rememberMe"
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>Lembrar de mim</span>
+                </label>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="totp-fields"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="field-group"
+            >
+              <div className="twofa-verification-header" style={{ marginBottom: "1.5rem", textAlign: "center" }}>
+                <div style={{ display: "inline-flex", padding: "0.75rem", borderRadius: "50%", background: "oklch(0.75 0.18 210 / 0.1)", color: "var(--primary)", marginBottom: "0.75rem" }}>
+                  <Lock aria-hidden="true" size={24} />
+                </div>
+                <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "0.25rem" }}>Verificação de 2 Fatores</h2>
+                <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>
+                  Digite o código de 6 dígitos gerado pelo seu aplicativo autenticador.
+                </p>
+              </div>
+
+              <label htmlFor="totpCode">Código 2FA</label>
+              <input
+                aria-describedby={visibleTotpError ? "totp-error" : undefined}
+                aria-invalid={Boolean(visibleTotpError)}
+                autoComplete="one-time-code"
+                className={cn("form-input totp-input", visibleTotpError && "input-error")}
+                id="totpCode"
+                inputMode="numeric"
+                maxLength={6}
+                onChange={(event) => updateTotp(event.target.value)}
+                placeholder="000000"
+                value={totpCode}
+                style={{ textAlign: "center", fontSize: "1.5rem", letterSpacing: "0.25em", fontWeight: "bold" }}
+              />
+              {visibleTotpError ? (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  id="totp-error"
+                  role="alert"
                 >
-                  {showPassword ? <EyeOff aria-hidden="true" size={18} /> : <Eye aria-hidden="true" size={18} />}
-                </button>
-              </div>
-              {visiblePasswordError ? <p id="password-error" role="alert">{visiblePasswordError}</p> : null}
-            </div>
+                  {visibleTotpError}
+                </motion.p>
+              ) : null}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <div className="form-options">
-              <label className="checkbox-label" htmlFor="rememberMe">
-                <input
-                  checked={rememberMe}
-                  id="rememberMe"
-                  onChange={(event) => setRememberMe(event.target.checked)}
-                  type="checkbox"
-                />
-                <span>Lembrar de mim</span>
-              </label>
-            </div>
-          </>
-        ) : (
-          <div className="field-group">
-            <div className="twofa-verification-header" style={{ marginBottom: "1.5rem", textAlign: "center" }}>
-              <div style={{ display: "inline-flex", padding: "0.75rem", borderRadius: "50%", background: "oklch(0.75 0.18 210 / 0.1)", color: "var(--primary)", marginBottom: "0.75rem" }}>
-                <Lock aria-hidden="true" size={24} />
-              </div>
-              <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "0.25rem" }}>Verificação de 2 Fatores</h2>
-              <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>
-                Digite o código de 6 dígitos gerado pelo seu aplicativo autenticador.
-              </p>
-            </div>
-
-            <label htmlFor="totpCode">Código 2FA</label>
-            <input
-              aria-describedby={visibleTotpError ? "totp-error" : undefined}
-              aria-invalid={Boolean(visibleTotpError)}
-              autoComplete="one-time-code"
-              className={cn("form-input totp-input", visibleTotpError && "input-error")}
-              id="totpCode"
-              inputMode="numeric"
-              maxLength={6}
-              onChange={(event) => updateTotp(event.target.value)}
-              placeholder="000000"
-              value={totpCode}
-              style={{ textAlign: "center", fontSize: "1.5rem", letterSpacing: "0.25em", fontWeight: "bold" }}
-            />
-            {visibleTotpError ? <p id="totp-error" role="alert">{visibleTotpError}</p> : null}
+        {errors.form ? (
+          <div className="animate-shake">
+            <p className="form-alert" role="alert">{errors.form}</p>
           </div>
-        )}
-
-        {errors.form ? <p className="form-alert" role="alert">{errors.form}</p> : null}
+        ) : null}
 
         <button className="primary-button" disabled={isSubmitting} type="submit" style={{ marginTop: "1rem" }}>
           {isSubmitting ? <Loader2 aria-hidden="true" className="spinner" size={16} /> : <ArrowRight aria-hidden="true" size={16} />}
@@ -203,12 +251,6 @@ export function LoginForm() {
           >
             Voltar para o Login
           </button>
-        )}
-
-        {!requiresTotp && (
-          <p className="signup-text">
-            Ainda não tem uma conta? <a href="mailto:contato@multempresas.local">Solicitar cadastro</a>
-          </p>
         )}
       </form>
 

@@ -1,20 +1,24 @@
 import { LoginForm } from "@/components/login-form";
+import { Aurora } from "@/components/ui/aurora";
+import { BlurText } from "@/components/ui/blur-text";
 
 export default function LoginPage() {
   return (
-    <main className="auth-shell">
-      <div className="auth-grid" aria-hidden="true" />
-      <div className="auth-glow" aria-hidden="true" />
-
-      <section className="auth-card" aria-labelledby="login-title">
+    <Aurora className="auth-shell">
+      <section className="auth-card animate-fade-in-up" aria-labelledby="login-title">
         <header className="auth-header">
-          <p className="auth-kicker">MultEmpresas</p>
-          <h1 id="login-title">Bem-vindo</h1>
-          <p>Entre na sua conta para acessar o dashboard da sua empresa.</p>
+          <span className="auth-kicker">
+          </span>
+          <h1 id="login-title" className="flex justify-center">
+            <BlurText text="Bem-vindo" delay={0.3} />
+          </h1>
+          <p style={{ marginTop: "0.5rem" }}>
+            Entre na sua conta para acessar o dashboard da sua empresa.
+          </p>
         </header>
 
         <LoginForm />
       </section>
-    </main>
+    </Aurora>
   );
 }

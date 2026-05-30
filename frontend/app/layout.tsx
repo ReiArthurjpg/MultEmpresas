@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MultEmpresas | Login",
+  title: "MultEmpresas",
   description: "Acesse o painel inicial do SaaS multiempresa.",
 };
 
