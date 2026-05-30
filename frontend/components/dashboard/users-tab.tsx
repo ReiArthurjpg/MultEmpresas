@@ -9,6 +9,8 @@ import {
   UserCheck,
   UserX,
   X,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import {
@@ -213,6 +215,81 @@ const styles = {
     fontSize: "0.75rem",
     fontWeight: 700,
   },
+  // Grid/Cards styling
+  gridContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gap: "1.25rem",
+    marginTop: "0.5rem",
+  },
+  userCard: {
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    minHeight: "240px",
+    padding: "1.5rem",
+    border: "1px solid #eef2f6",
+    borderRadius: "22px",
+    background: "#ffffff",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.03)",
+    transition: "all 0.2s ease",
+  },
+  cardTop: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  cardAvatar: {
+    width: "44px",
+    height: "44px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "14px",
+    fontWeight: 850,
+    fontSize: "1.05rem",
+  },
+  cardBody: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.4rem",
+    marginTop: "1rem",
+    marginBottom: "1rem",
+  },
+  cardName: {
+    margin: 0,
+    fontWeight: 800,
+    color: "#0f172a",
+    fontSize: "1.05rem",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  cardEmail: {
+    color: "#64748b",
+    fontSize: "0.85rem",
+    fontWeight: 500,
+    wordBreak: "break-all",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  cardBadges: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.4rem",
+    marginTop: "0.25rem",
+  },
+  cardFooter: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTop: "1px solid #f1f5f9",
+    paddingTop: "1rem",
+    marginTop: "auto",
+  },
+  // Modal Styling
   modalBackdrop: {
     position: "fixed",
     inset: 0,
@@ -386,6 +463,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -520,7 +598,8 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       <style>{`
         .table-row-hover:hover {
           background-color: #f8fafc !important;
-          transform: translateY(-1px);
+          transform: translateY(-2px);
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
         }
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -564,18 +643,79 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           </div>
 
           <div style={styles.actionsRow}>
+            {/* View Mode Toggle Segmented Control */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "#f1f5f9",
+                borderRadius: "12px",
+                padding: "0.25rem",
+                border: "1px solid #e2e8f0",
+                flex: 1,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.35rem",
+                  flex: 1,
+                  padding: "0.45rem 0.65rem",
+                  borderRadius: "9px",
+                  border: "none",
+                  background: viewMode === "list" ? "#ffffff" : "transparent",
+                  color: viewMode === "list" ? "#0f172a" : "#64748b",
+                  boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+                  fontSize: "0.75rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <List size={14} />
+                Lista
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.35rem",
+                  flex: 1,
+                  padding: "0.45rem 0.65rem",
+                  borderRadius: "9px",
+                  border: "none",
+                  background: viewMode === "grid" ? "#ffffff" : "transparent",
+                  color: viewMode === "grid" ? "#0f172a" : "#64748b",
+                  boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+                  fontSize: "0.75rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <LayoutGrid size={14} />
+                Cards
+              </button>
+            </div>
+
             <button
               className="secondary-button"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.4rem",
-                padding: "0.58rem 0.82rem",
+                padding: "0.58rem 0.65rem",
                 borderRadius: "12px",
                 fontSize: "0.78rem",
                 fontWeight: 850,
                 cursor: "pointer",
-                flex: 1,
                 justifyContent: "center",
                 border: "1px solid #cbd5e1",
                 background: "#ffffff",
@@ -587,7 +727,6 @@ export function UsersTab({ accessToken }: UsersTabProps) {
               aria-label="Recarregar lista"
             >
               <RefreshCw size={14} className={cn(loading && "spinner")} aria-hidden="true" />
-              Atualizar
             </button>
             <button
               className="primary-button"
@@ -595,12 +734,11 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.4rem",
-                padding: "0.58rem 1rem",
+                padding: "0.58rem 0.9rem",
                 borderRadius: "12px",
                 fontSize: "0.78rem",
                 fontWeight: 850,
                 cursor: "pointer",
-                flex: 1.3,
                 justifyContent: "center",
                 background: "linear-gradient(135deg, #059669, #10b981)",
                 color: "#ffffff",
@@ -611,7 +749,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
               type="button"
               id="btn-create-user"
             >
-              <Plus size={16} aria-hidden="true" /> Novo usuário
+              <Plus size={16} aria-hidden="true" />
             </button>
           </div>
         </aside>
@@ -639,7 +777,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
         </div>
       )}
 
-      {/* Table */}
+      {/* Content Area */}
       {loading ? (
         <div
           style={{
@@ -717,6 +855,177 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           >
             <Plus size={14} aria-hidden="true" /> Criar primeiro usuário
           </button>
+        </div>
+      ) : viewMode === "grid" ? (
+        <div style={styles.gridContainer} role="region" aria-label="Lista de usuários em cards">
+          {users.map((user) => {
+            const avatarTheme = AVATAR_THEMES[user.role] ?? AVATAR_THEMES.OPERATOR;
+            return (
+              <article key={user.id} style={styles.userCard} className="table-row-hover">
+                <div style={styles.cardTop}>
+                  <div
+                    style={{
+                      ...styles.cardAvatar,
+                      background: avatarTheme.bg,
+                      color: avatarTheme.color,
+                    }}
+                    aria-hidden="true"
+                  >
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ display: "flex", gap: "0.35rem" }}>
+                    {user.active ? (
+                      <span
+                        style={{
+                          ...badgeBaseStyle,
+                          ...PILL_STYLES.active,
+                          padding: "0.2rem 0.5rem",
+                          fontSize: "0.68rem",
+                        }}
+                      >
+                        Ativo
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          ...badgeBaseStyle,
+                          ...PILL_STYLES.inactive,
+                          padding: "0.2rem 0.5rem",
+                          fontSize: "0.68rem",
+                        }}
+                      >
+                        Inativo
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={styles.cardBody}>
+                  <h4 style={styles.cardName} title={user.name}>
+                    {user.name}
+                  </h4>
+                  <span style={styles.cardEmail} title={user.email}>
+                    {user.email}
+                  </span>
+
+                  <div style={styles.cardBadges}>
+                    <span
+                      style={{
+                        ...badgeBaseStyle,
+                        ...(PILL_STYLES[user.role.toLowerCase()] ?? PILL_STYLES.operator),
+                        fontSize: "0.65rem",
+                        padding: "0.15rem 0.45rem",
+                      }}
+                    >
+                      {ROLE_LABELS[user.role]}
+                    </span>
+                    <span
+                      style={{
+                        ...badgeBaseStyle,
+                        ...(user.two_factor_enabled ? PILL_STYLES["2fa-on"] : PILL_STYLES["2fa-off"]),
+                        fontSize: "0.65rem",
+                        padding: "0.15rem 0.45rem",
+                      }}
+                    >
+                      2FA: {user.two_factor_enabled ? "ON" : "OFF"}
+                    </span>
+                  </div>
+
+                  {user.must_change_password && (
+                    <div style={{ ...styles.warnLabel, marginTop: "0.5rem" }}>
+                      <span style={{ fontSize: "0.8rem" }}>🔑</span> Troca de senha pendente
+                    </div>
+                  )}
+                </div>
+
+                <div style={styles.cardFooter}>
+                  <div />
+
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.4rem",
+                    }}
+                  >
+                    <button
+                      className="icon-button"
+                      style={{ ...actionBtnStyle, width: "30px", height: "30px", borderRadius: "8px" }}
+                      onClick={() => openEdit(user)}
+                      type="button"
+                      aria-label={`Editar ${user.name}`}
+                    >
+                      <Edit2 size={13} aria-hidden="true" />
+                    </button>
+                    {confirmDeleteId === user.id ? (
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.25rem",
+                          background: "#fef2f2",
+                          border: "1px solid #fee2e2",
+                          padding: "0.2rem 0.4rem",
+                          borderRadius: "8px",
+                          animation: "fadeIn 0.15s ease",
+                        }}
+                      >
+                        <button
+                          className="icon-button"
+                          style={{
+                            ...actionBtnDangerStyle,
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "6px",
+                            border: "none",
+                            background: "#ef4444",
+                            color: "#ffffff",
+                          }}
+                          onClick={() => handleDelete(user.id)}
+                          disabled={deletingId === user.id}
+                          type="button"
+                          aria-label="Confirmar exclusão"
+                        >
+                          {deletingId === user.id ? (
+                            <Loader2 size={10} className="spinner" />
+                          ) : (
+                            <Trash2 size={10} />
+                          )}
+                        </button>
+                        <button
+                          className="icon-button"
+                          style={{
+                            ...actionBtnStyle,
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "6px",
+                            border: "none",
+                            background: "#e2e8f0",
+                            color: "#475569",
+                          }}
+                          onClick={() => setConfirmDeleteId(null)}
+                          type="button"
+                          aria-label="Cancelar exclusão"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="icon-button"
+                        style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
+                        onClick={() => setConfirmDeleteId(user.id)}
+                        type="button"
+                        aria-label={`Excluir ${user.name}`}
+                      >
+                        <Trash2 size={13} aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       ) : (
         <div style={styles.tableContainer} role="region" aria-label="Lista de usuários" tabIndex={0}>
