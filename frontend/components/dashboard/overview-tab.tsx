@@ -388,39 +388,6 @@ export function OverviewTab({ session }: OverviewTabProps) {
       tone: user.active !== false ? "green" : "red",
     },
   ];
-
-  const sessionInfo = [
-    { icon: Mail, label: "Email", value: user.email, tone: "blue" },
-    {
-      icon: Building2,
-      label: "Empresa",
-      value: company?.name ?? "Conta Global",
-      tone: "purple",
-    },
-    { icon: Clock, label: "Horário local", value: localTime, tone: "green" },
-    {
-      icon: KeyRound,
-      label: "Troca de senha",
-      value: user.must_change_password ? "Pendente" : "OK",
-      tone: user.must_change_password ? "yellow" : "green",
-    },
-  ];
-
-  const quickSummary = [
-    { label: "Perfil", value: roleLabel, variant: user.role.toLowerCase() },
-    { label: "Empresa", value: company?.name ?? "Global", variant: "info" },
-    {
-      label: "2FA",
-      value: user.two_factor_enabled ? "Ativo" : "Pendente",
-      variant: user.two_factor_enabled ? "success" : "warning",
-    },
-    {
-      label: "Status da conta",
-      value: accountStatus,
-      variant: user.active !== false ? "success" : "danger",
-    },
-  ];
-
   const sessionInfo = [
     {
       icon: Mail,
