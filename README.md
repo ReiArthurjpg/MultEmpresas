@@ -24,6 +24,8 @@ docker compose exec api composer seed
 
 URLs:
 
+
+
 - API: <http://localhost:8010>
 - Swagger: <http://localhost:8010/docs>
 - PhpMyAdmin: <http://localhost:8080>
