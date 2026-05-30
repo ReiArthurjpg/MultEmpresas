@@ -1,33 +1,400 @@
 {
   "openapi": "3.0.3",
-  "info": {"title": "MultEmpresas SaaS API", "version": "1.0.0", "description": "API REST multiempresa com Clean Architecture, JWT, refresh token, TOTP, auditoria e CRUDs administrativos."},
+  "info": {
+    "title": "MultEmpresas SaaS API",
+    "version": "1.0.0",
+    "description": "API REST multiempresa com Clean Architecture, JWT, refresh token, TOTP, auditoria e CRUDs administrativos."
+  },
   "servers": [{"url": "http://localhost:8010"}],
+  "tags": [
+    {"name": "Authentication", "description": "Login, refresh token e 2FA"},
+    {"name": "Companies", "description": "Gestão de empresas e dados de CNPJ"},
+    {"name": "Plans", "description": "Cadastro e gerenciamento de planos"},
+    {"name": "Users", "description": "Cadastro e gerenciamento de usuários"},
+    {"name": "Audit", "description": "Logs de auditoria"}
+  ],
   "components": {
-    "securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
-      "LoginRequest": {"type": "object", "required": ["email", "password"], "properties": {"email": {"type": "string", "example": "master@system.local"}, "password": {"type": "string", "example": "Master@123"}, "totp_code": {"type": "string", "example": "123456"}}},
-      "Plan": {"type": "object", "properties": {"name": {"type": "string"}, "description": {"type": "string"}, "price": {"type": "number"}, "active": {"type": "boolean"}, "permissions": {"type": "array", "items": {"type": "string"}}}},
-      "Company": {"type": "object", "properties": {"company_name": {"type": "string"}, "trade_name": {"type": "string"}, "cnpj": {"type": "string"}, "email": {"type": "string"}, "phone": {"type": "string"}, "address": {"type": "string"}, "city": {"type": "string"}, "state": {"type": "string"}, "zip_code": {"type": "string"}, "plan_id": {"type": "integer"}, "active": {"type": "boolean"}}},
-      "User": {"type": "object", "properties": {"company_id": {"type": "integer", "nullable": true}, "name": {"type": "string"}, "email": {"type": "string"}, "password": {"type": "string"}, "role": {"type": "string", "enum": ["MASTER", "ADMIN", "OPERATOR"]}, "active": {"type": "boolean"}}}
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {"type": "string", "example": "master@system.local"},
+          "password": {"type": "string", "example": "Master@123"},
+          "totp_code": {"type": "string", "example": "123456"}
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": {"type": "string"},
+          "refresh_token": {"type": "string"},
+          "expires_in": {"type": "integer"},
+          "token_type": {"type": "string", "example": "Bearer"}
+        }
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "name": {"type": "string"},
+          "description": {"type": "string"},
+          "price": {"type": "number"},
+          "active": {"type": "boolean"},
+          "permissions": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "company_name": {"type": "string"},
+          "trade_name": {"type": "string"},
+          "cnpj": {"type": "string"},
+          "email": {"type": "string"},
+          "phone": {"type": "string"},
+          "address": {"type": "string"},
+          "city": {"type": "string"},
+          "state": {"type": "string"},
+          "zip_code": {"type": "string"},
+          "plan_id": {"type": "integer"},
+          "active": {"type": "boolean"},
+          "logo_url": {"type": "string"}
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "company_id": {"type": "integer", "nullable": true},
+          "name": {"type": "string"},
+          "email": {"type": "string"},
+          "password": {"type": "string"},
+          "role": {"type": "string", "enum": ["MASTER", "ADMIN", "OPERATOR"]},
+          "active": {"type": "boolean"},
+          "two_factor_enabled": {"type": "boolean"},
+          "must_change_password": {"type": "boolean"}
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {"type": "string"}
+        }
+      }
     }
   },
   "paths": {
-    "/": {"get": {"summary": "Health check", "responses": {"200": {"description": "API ativa"}}}},
-    "/auth/login": {"post": {"summary": "Login com email, senha e TOTP quando obrigatório", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/LoginRequest"}}}}, "responses": {"200": {"description": "Tokens e dados do usuário"}}}},
-    "/auth/refresh": {"post": {"summary": "Renova access token", "requestBody": {"content": {"application/json": {"schema": {"type": "object", "properties": {"refresh_token": {"type": "string"}}}}}}, "responses": {"200": {"description": "Novo access token"}}}},
-    "/auth/logout": {"post": {"security": [{"bearerAuth": []}], "summary": "Revoga refresh tokens do usuário", "responses": {"200": {"description": "Logout"}}}},
-    "/auth/2fa/setup": {"post": {"security": [{"bearerAuth": []}], "summary": "Gera segredo TOTP e URL QRCode", "responses": {"200": {"description": "Segredo gerado"}}}},
-    "/auth/2fa/verify": {"post": {"security": [{"bearerAuth": []}], "summary": "Valida código TOTP", "responses": {"200": {"description": "Validação"}}}},
-    "/auth/2fa/enable": {"post": {"security": [{"bearerAuth": []}], "summary": "Habilita 2FA", "responses": {"200": {"description": "2FA habilitado"}}}},
-    "/auth/2fa/disable": {"post": {"security": [{"bearerAuth": []}], "summary": "Desabilita 2FA para operadores", "responses": {"200": {"description": "2FA desabilitado"}}}},
-    "/plans": {"get": {"security": [{"bearerAuth": []}], "summary": "Lista planos", "responses": {"200": {"description": "Lista"}}}, "post": {"security": [{"bearerAuth": []}], "summary": "Cria plano", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Plan"}}}}, "responses": {"200": {"description": "Criado"}}}},
-    "/plans/{id}": {"get": {"security": [{"bearerAuth": []}], "summary": "Detalha plano", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Detalhe"}}}, "put": {"security": [{"bearerAuth": []}], "summary": "Atualiza plano", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Atualizado"}}}, "delete": {"security": [{"bearerAuth": []}], "summary": "Remove plano", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Removido"}}}},
-    "/companies": {"get": {"security": [{"bearerAuth": []}], "summary": "Lista empresas com isolamento por tenant", "responses": {"200": {"description": "Lista"}}}, "post": {"security": [{"bearerAuth": []}], "summary": "Cria empresa", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Company"}}}}, "responses": {"200": {"description": "Criada"}}}},
-    "/companies/{id}": {"get": {"security": [{"bearerAuth": []}], "summary": "Detalha empresa", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Detalhe"}}}, "put": {"security": [{"bearerAuth": []}], "summary": "Atualiza empresa", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Atualizada"}}}, "delete": {"security": [{"bearerAuth": []}], "summary": "Remove empresa", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Removida"}}}},
-    "/companies/cnpj/{cnpj}": {"get": {"security": [{"bearerAuth": []}], "summary": "Consulta CNPJ em API pública e valida situação ativa", "parameters": [{"name": "cnpj", "in": "path", "required": true, "schema": {"type": "string"}}], "responses": {"200": {"description": "Dados públicos"}}}},
-    "/companies/{id}/logo": {"post": {"security": [{"bearerAuth": []}], "summary": "Upload de logo JPG, PNG ou WEBP", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "requestBody": {"content": {"multipart/form-data": {"schema": {"type": "object", "properties": {"logo": {"type": "string", "format": "binary"}}}}}}, "responses": {"200": {"description": "Logo salva"}}}},
-    "/users": {"get": {"security": [{"bearerAuth": []}], "summary": "Lista usuários com isolamento por tenant", "responses": {"200": {"description": "Lista"}}}, "post": {"security": [{"bearerAuth": []}], "summary": "Cria usuário", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/User"}}}}, "responses": {"200": {"description": "Criado"}}}},
-    "/users/{id}": {"get": {"security": [{"bearerAuth": []}], "summary": "Detalha usuário", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Detalhe"}}}, "put": {"security": [{"bearerAuth": []}], "summary": "Atualiza usuário", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Atualizado"}}}, "delete": {"security": [{"bearerAuth": []}], "summary": "Remove usuário", "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}], "responses": {"200": {"description": "Removido"}}}},
-    "/audit-logs": {"get": {"security": [{"bearerAuth": []}], "summary": "Lista logs de auditoria respeitando tenant", "responses": {"200": {"description": "Logs"}}}}
+    "/": {
+      "get": {
+        "summary": "Health check",
+        "tags": ["Authentication"],
+        "responses": {"200": {"description": "API ativa"}}
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login com email, senha e TOTP quando obrigatório",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/LoginRequest"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens e dados do usuário",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LoginResponse"}}}
+          },
+          "400": {"description": "Erro de validação", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Renova access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {"refresh_token": {"type": "string"}},
+                "required": ["refresh_token"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Novo access token", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LoginResponse"}}}},
+          "400": {"description": "Token inválido", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Revoga refresh tokens do usuário autenticado",
+        "responses": {
+          "200": {"description": "Logout realizado"},
+          "401": {"description": "Não autorizado", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/auth/2fa/setup": {
+      "post": {
+        "tags": ["Authentication"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Gera segredo TOTP e QR Code URL",
+        "responses": {
+          "200": {"description": "Segredo gerado"},
+          "401": {"description": "Não autorizado", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/auth/2fa/verify": {
+      "post": {
+        "tags": ["Authentication"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Valida código TOTP",
+        "responses": {
+          "200": {"description": "Validação realizada"},
+          "400": {"description": "Código inválido", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/auth/2fa/enable": {
+      "post": {
+        "tags": ["Authentication"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Habilita 2FA após verificação do código",
+        "responses": {
+          "200": {"description": "2FA habilitado"},
+          "400": {"description": "Código inválido", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/auth/2fa/disable": {
+      "post": {
+        "tags": ["Authentication"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Desabilita 2FA para usuários permitidos",
+        "responses": {
+          "200": {"description": "2FA desabilitado"},
+          "400": {"description": "Operação não permitida", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/plans": {
+      "get": {
+        "tags": ["Plans"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Lista planos",
+        "responses": {
+          "200": {"description": "Lista de planos", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/Plan"}}}}}
+        }
+      },
+      "post": {
+        "tags": ["Plans"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Cria novo plano",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/Plan"}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Plano criado", "content": {"application/json": {"schema": {"type": "object", "properties": {"id": {"type": "integer"}}}}}},
+          "400": {"description": "Dados inválidos", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/plans/{id}": {
+      "get": {
+        "tags": ["Plans"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Detalha plano",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {
+          "200": {"description": "Plano encontrado", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Plan"}}}},
+          "404": {"description": "Plano não encontrado", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      },
+      "put": {
+        "tags": ["Plans"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Atualiza plano",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Plano atualizado"}, "400": {"description": "Dados inválidos"}}
+      },
+      "delete": {
+        "tags": ["Plans"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Remove plano",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Plano removido"}}
+      }
+    },
+    "/companies": {
+      "get": {
+        "tags": ["Companies"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Lista empresas",
+        "responses": {
+          "200": {"description": "Lista de empresas", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/Company"}}}}}
+        }
+      },
+      "post": {
+        "tags": ["Companies"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Cria empresa",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/Company"}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Empresa criada", "content": {"application/json": {"schema": {"type": "object", "properties": {"id": {"type": "integer"}}}}}},
+          "400": {"description": "Dados inválidos", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/companies/{id}": {
+      "get": {
+        "tags": ["Companies"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Detalha empresa",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {
+          "200": {"description": "Empresa encontrada", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Company"}}}},
+          "404": {"description": "Empresa não encontrada", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      },
+      "put": {
+        "tags": ["Companies"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Atualiza empresa",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Empresa atualizada"}, "400": {"description": "Dados inválidos"}}
+      },
+      "delete": {
+        "tags": ["Companies"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Remove empresa",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Empresa removida"}}
+      }
+    },
+    "/companies/cnpj/{cnpj}": {
+      "get": {
+        "tags": ["Companies"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Consulta CNPJ em API pública e valida situação ativa",
+        "parameters": [{"name": "cnpj", "in": "path", "required": true, "schema": {"type": "string"}}],
+        "responses": {"200": {"description": "Dados de CNPJ"}, "400": {"description": "CNPJ inválido ou inativo"}}
+      }
+    },
+    "/companies/{id}/logo": {
+      "post": {
+        "tags": ["Companies"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Upload de logo JPG, PNG ou WEBP",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {"logo": {"type": "string", "format": "binary"}}
+              }
+            }
+          }
+        },
+        "responses": {"200": {"description": "Logo salva"}, "400": {"description": "Formato inválido"}}
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Lista usuários",
+        "responses": {
+          "200": {"description": "Lista de usuários", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/User"}}}}}
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Cria usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/User"}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Usuário criado", "content": {"application/json": {"schema": {"type": "object", "properties": {"id": {"type": "integer"}}}}}},
+          "400": {"description": "Dados inválidos", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Detalha usuário",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {
+          "200": {"description": "Usuário encontrado", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/User"}}}},
+          "404": {"description": "Usuário não encontrado", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Atualiza usuário",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Usuário atualizado"}, "400": {"description": "Dados inválidos"}}
+      },
+      "delete": {
+        "tags": ["Users"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Remove usuário",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
+        "responses": {"200": {"description": "Usuário removido"}}
+      }
+    },
+    "/audit-logs": {
+      "get": {
+        "tags": ["Audit"],
+        "security": [{"bearerAuth": []}],
+        "summary": "Lista logs de auditoria respeitando tenant",
+        "responses": {
+          "200": {"description": "Lista de logs de auditoria"},
+          "401": {"description": "Não autorizado", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}}
+        }
+      }
+    }
   }
 }
