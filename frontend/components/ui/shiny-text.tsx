@@ -14,22 +14,16 @@ export function ShinyText({ text, disabled = false, speed = 4, className }: Shin
   return (
     <span
       className={cn(
-        "inline-block bg-clip-text font-black",
-        !disabled && "animate-shiny",
+        "inline-block font-black tracking-tight",
         className
       )}
       style={{
-        backgroundImage:
-          "linear-gradient(120deg, var(--primary) 35%, oklch(0.75 0.18 210) 50%, var(--primary) 65%)",
-        backgroundSize: "200% 100%",
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-        animationDuration: `${speed}s`,
-        animationIterationCount: "infinite",
-        animationTimingFunction: "linear",
+        color: "#e2e8f0",
+        animation: disabled ? "none" : `sb-brand-pulse ${speed}s ease-in-out infinite`,
       }}
     >
       {text}
     </span>
   );
 }
+
