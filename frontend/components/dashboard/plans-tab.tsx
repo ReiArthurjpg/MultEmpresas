@@ -26,13 +26,172 @@ type PlansTabProps = {
   accessToken: string;
 };
 
-const PERMISSIONS = [
-  { id: "CREATE_USERS", label: "Gerenciar Usuários", desc: "Criar, editar e remover usuários da empresa" },
-  { id: "CREATE_CLIENTS", label: "Gerenciar Clientes", desc: "Cadastrar e gerenciar clientes no sistema" },
-  { id: "CREATE_ORDERS", label: "Gerenciar Pedidos", desc: "Lançar e gerenciar vendas ou pedidos" },
-  { id: "VIEW_REPORTS", label: "Visualizar Relatórios", desc: "Acessar relatórios e analytics da empresa" },
-  { id: "EXPORT_DATA", label: "Exportar Dados", desc: "Exportar dados da empresa em planilhas/PDF" },
+type PermissionItem = {
+  id: string;
+  label: string;
+};
+
+type PermissionGroup = {
+  title: string;
+  permissions?: PermissionItem[];
+  subgroups?: Array<{
+    title: string;
+    permissions: PermissionItem[];
+  }>;
+};
+
+const PERMISSION_GROUPS: PermissionGroup[] = [
+  {
+    title: "DASHBOARD",
+    permissions: [
+      { id: "DASHBOARD_GERAL", label: "Dashboard Geral" },
+      { id: "DASHBOARD_INDICADORES", label: "Indicadores" },
+      { id: "DASHBOARD_METAS", label: "Metas" },
+      { id: "DASHBOARD_RANKING_OPERADORES", label: "Ranking de Operadores" },
+    ],
+  },
+  {
+    title: "OPERAÇÕES",
+    permissions: [
+      { id: "OPERACOES_CONSULTAS_CORBAN", label: "Consultas Corban" },
+      { id: "OPERACOES_CONSULTAS_INSS", label: "Consultas INSS" },
+      { id: "OPERACOES_CONSULTAS_SIAPE", label: "Consultas SIAPE" },
+      { id: "OPERACOES_CONSULTAS_GOV", label: "Consultas GOV" },
+      { id: "OPERACOES_CONSULTAS_PREFEITURAS", label: "Consultas Prefeituras" },
+      { id: "OPERACOES_CONSULTAS_CLT", label: "Consultas CLT" },
+      { id: "OPERACOES_CONSULTAS_FGTS", label: "Consultas FGTS" },
+    ],
+  },
+  {
+    title: "EXTRATO BANCÁRIO",
+    permissions: [{ id: "EXTRATO_BANCARIO_DADOS_CONSIGNACAO", label: "Dados de Consignação" }],
+  },
+  {
+    title: "OFERTAS DE CRÉDITO",
+    permissions: [{ id: "OFERTAS_CREDITO_NOVOS_CONTRATOS", label: "Novos Contratos" }],
+  },
+  {
+    title: "MAILING",
+    permissions: [
+      { id: "MAILING_GERAR_LISTAS", label: "Gerar Listas" },
+      { id: "MAILING_HIGIENIZACAO", label: "Higienização" },
+      { id: "MAILING_EXPORTACAO", label: "Exportação" },
+      { id: "MAILING_IMPORTACAO", label: "Importação" },
+    ],
+  },
+  {
+    title: "DIGITAÇÃO DE CONTRATOS",
+    permissions: [{ id: "DIGITACAO_CONTRATOS", label: "Digitação de Contratos" }],
+  },
+  {
+    title: "CAMPANHAS",
+    permissions: [
+      { id: "CAMPANHAS_IMPORTAR", label: "Importar Campanha" },
+      { id: "CAMPANHAS_EDITAR", label: "Editar Campanha" },
+      { id: "CAMPANHAS_DISPARAR", label: "Disparar Campanha" },
+      { id: "CAMPANHAS_MONITORAR", label: "Monitorar Campanha" },
+    ],
+  },
+  {
+    title: "AGENDA",
+    permissions: [
+      { id: "AGENDA_AGENDAMENTOS", label: "Agendamentos" },
+      { id: "AGENDA_RETORNOS", label: "Retornos" },
+      { id: "AGENDA_CALENDARIO", label: "Calendário" },
+    ],
+  },
+  {
+    title: "NEXABOT",
+    permissions: [{ id: "NEXABOT_DISPARO_WHATSAPP", label: "Disparo WhatsApp" }],
+  },
+  {
+    title: "HOT PHONE",
+    permissions: [{ id: "HOT_PHONE_CONSULTA_TELEFONES", label: "Consulta Telefones" }],
+  },
+  {
+    title: "ANÁLISE DE CRÉDITO",
+    permissions: [
+      { id: "ANALISE_CREDITO_SPC", label: "SPC" },
+      { id: "ANALISE_CREDITO_SERASA", label: "Serasa" },
+      { id: "ANALISE_CREDITO_BOA_VISTA", label: "Boa Vista" },
+    ],
+  },
+  {
+    title: "INTEGRAÇÕES",
+    permissions: [
+      { id: "INTEGRACOES_APIS", label: "APIs" },
+      { id: "INTEGRACOES_WEBHOOKS", label: "Webhooks" },
+      { id: "INTEGRACOES_PARCEIROS", label: "Parceiros" },
+    ],
+  },
+  {
+    title: "RELATÓRIOS",
+    permissions: [
+      { id: "RELATORIOS_OPERACIONAL", label: "Operacional" },
+      { id: "RELATORIOS_COMERCIAL", label: "Comercial" },
+      { id: "RELATORIOS_FINANCEIRO", label: "Financeiro" },
+      { id: "RELATORIOS_LOGS", label: "Logs" },
+    ],
+  },
+  {
+    title: "CONFIGURAÇÕES",
+    permissions: [
+      { id: "CONFIGURACOES_SISTEMA", label: "Sistema" },
+      { id: "CONFIGURACOES_APIS", label: "APIs" },
+      { id: "CONFIGURACOES_LOGS", label: "Logs" },
+      { id: "CONFIGURACOES_SEGURANCA", label: "Segurança" },
+    ],
+  },
+  {
+    title: "CRÉDITOS",
+    permissions: [
+      { id: "CREDITOS_EMPRESAS", label: "Empresas" },
+      { id: "CREDITOS_SALDO", label: "Saldo de Créditos" },
+      { id: "CREDITOS_COMPRA", label: "Compra de Créditos" },
+      { id: "CREDITOS_HISTORICO", label: "Histórico" },
+      { id: "CREDITOS_USUARIOS", label: "Usuários" },
+      { id: "CREDITOS_DISTRIBUICAO", label: "Distribuição de Créditos" },
+      { id: "CREDITOS_LIMITE_OPERADOR", label: "Limite por Operador" },
+      { id: "CREDITOS_CONSUMO", label: "Consumo" },
+    ],
+  },
+  {
+    title: "CADASTROS",
+    subgroups: [
+      {
+        title: "Usuários",
+        permissions: [
+          { id: "CADASTROS_USUARIOS_INCLUIR", label: "Incluir" },
+          { id: "CADASTROS_USUARIOS_ALTERAR", label: "Alterar" },
+          { id: "CADASTROS_USUARIOS_EXCLUIR", label: "Excluir" },
+          { id: "CADASTROS_USUARIOS_BLOQUEAR", label: "Bloquear" },
+        ],
+      },
+      {
+        title: "Empresas",
+        permissions: [
+          { id: "CADASTROS_EMPRESAS_INCLUIR", label: "Incluir" },
+          { id: "CADASTROS_EMPRESAS_ALTERAR", label: "Alterar" },
+          { id: "CADASTROS_EMPRESAS_EXCLUIR", label: "Excluir" },
+        ],
+      },
+      {
+        title: "Planos",
+        permissions: [
+          { id: "CADASTROS_PLANOS_BRONZE", label: "Bronze" },
+          { id: "CADASTROS_PLANOS_PRATA", label: "Prata" },
+          { id: "CADASTROS_PLANOS_OURO", label: "Ouro" },
+          { id: "CADASTROS_PLANOS_PERSONALIZADO", label: "Personalizado" },
+        ],
+      },
+    ],
+  },
 ];
+
+const PERMISSIONS = PERMISSION_GROUPS.flatMap((group) => [
+  ...(group.permissions ?? []),
+  ...(group.subgroups?.flatMap((subgroup) => subgroup.permissions) ?? []),
+]);
 
 type ModalMode = "create" | "edit";
 
@@ -270,6 +429,59 @@ const styles = {
     color: "#334155",
     fontWeight: 650,
   },
+  permissionGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.65rem",
+    padding: "0.85rem",
+    border: "1px solid #e2e8f0",
+    borderRadius: "14px",
+    background: "#ffffff",
+  },
+  permissionGroupTitle: {
+    margin: 0,
+    color: "#7c3aed",
+    fontSize: "0.75rem",
+    fontWeight: 850,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  permissionSubgroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.55rem",
+    paddingLeft: "0.5rem",
+    borderLeft: "2px solid #ede9fe",
+  },
+  permissionSubgroupTitle: {
+    color: "#334155",
+    fontSize: "0.82rem",
+    fontWeight: 850,
+  },
+  permissionGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: "0.6rem",
+  },
+  permissionOption: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.6rem",
+    cursor: "pointer",
+    userSelect: "none",
+  },
+  permissionCheckbox: {
+    width: "18px",
+    height: "18px",
+    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    cursor: "pointer",
+  },
+  permissionOptionLabel: {
+    color: "#0f172a",
+    fontSize: "0.84rem",
+    fontWeight: 750,
+  },
   cardFooter: {
     display: "flex",
     alignItems: "center",
@@ -292,7 +504,8 @@ const styles = {
   },
   modal: {
     width: "100%",
-    maxWidth: "580px",
+    maxWidth: "760px",
+    maxHeight: "calc(100vh - 3rem)",
     overflow: "hidden",
     borderRadius: "28px",
     background: "#ffffff",
@@ -318,6 +531,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "1.25rem",
+    maxHeight: "calc(100vh - 13rem)",
+    overflowY: "auto",
     padding: "1.75rem",
   },
   modalFooter: {
@@ -844,7 +1059,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                     plan.permissions.map((perm) => {
                       const pInfo = PERMISSIONS.find((p) => p.id === perm);
                       return (
-                        <div key={perm} style={styles.permissionLine} title={pInfo?.desc}>
+                        <div key={perm} style={styles.permissionLine} title={pInfo?.label}>
                           <span style={{ color: "#7c3aed", fontSize: "0.85rem" }}>✓</span>
                           <span>{pInfo?.label || perm}</span>
                         </div>
@@ -990,7 +1205,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                               fontSize: "0.68rem",
                               padding: "0.125rem 0.375rem",
                             }}
-                            title={PERMISSIONS.find((p) => p.id === perm)?.desc}
+                            title={PERMISSIONS.find((p) => p.id === perm)?.label}
                           >
                             {PERMISSIONS.find((p) => p.id === perm)?.label || perm}
                           </span>
@@ -1198,39 +1413,45 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  {PERMISSIONS.map((perm) => (
-                    <label
-                      key={perm.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "0.75rem",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={form.permissions.includes(perm.id)}
-                        onChange={() => handlePermissionToggle(perm.id)}
-                        style={{
-                          width: "18px",
-                          height: "18px",
-                          borderRadius: "6px",
-                          border: "1px solid #cbd5e1",
-                          cursor: "pointer",
-                          marginTop: "0.15rem",
-                        }}
-                      />
-                      <div>
-                        <div style={{ fontSize: "0.875rem", fontWeight: 800, color: "#0f172a" }}>
-                          {perm.label}
+                  {PERMISSION_GROUPS.map((group) => (
+                    <section key={group.title} style={styles.permissionGroup}>
+                      <h4 style={styles.permissionGroupTitle}>{group.title}</h4>
+
+                      {group.permissions && (
+                        <div style={styles.permissionGrid}>
+                          {group.permissions.map((perm) => (
+                            <label key={perm.id} style={styles.permissionOption}>
+                              <input
+                                type="checkbox"
+                                checked={form.permissions.includes(perm.id)}
+                                onChange={() => handlePermissionToggle(perm.id)}
+                                style={styles.permissionCheckbox}
+                              />
+                              <span style={styles.permissionOptionLabel}>{perm.label}</span>
+                            </label>
+                          ))}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
-                          {perm.desc}
+                      )}
+
+                      {group.subgroups?.map((subgroup) => (
+                        <div key={subgroup.title} style={styles.permissionSubgroup}>
+                          <strong style={styles.permissionSubgroupTitle}>{subgroup.title}</strong>
+                          <div style={styles.permissionGrid}>
+                            {subgroup.permissions.map((perm) => (
+                              <label key={perm.id} style={styles.permissionOption}>
+                                <input
+                                  type="checkbox"
+                                  checked={form.permissions.includes(perm.id)}
+                                  onChange={() => handlePermissionToggle(perm.id)}
+                                  style={styles.permissionCheckbox}
+                                />
+                                <span style={styles.permissionOptionLabel}>{perm.label}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </label>
+                      ))}
+                    </section>
                   ))}
                 </div>
               </div>
