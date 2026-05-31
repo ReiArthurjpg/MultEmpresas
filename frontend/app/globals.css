@@ -539,7 +539,8 @@ a {
   position: sticky;
   top: 0;
   height: 100vh;
-  overflow: hidden;
+  /* overflow: hidden removed — needed for the footer dropdown to escape the sidebar */
+  overflow: visible;
   z-index: 50;
 }
 .db-sidebar--collapsed { width: 64px; }
@@ -595,6 +596,7 @@ a {
   gap: 0.25rem;
   padding: 1rem 0.625rem;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .db-sidebar__item {
@@ -646,6 +648,9 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
+  /* overflow must stay visible so the upward dropdown escapes the sidebar */
+  overflow: visible;
 }
 
 .db-sidebar__user {
@@ -693,27 +698,7 @@ a {
   letter-spacing: 0.08em;
 }
 
-.db-sidebar__logout {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.625rem;
-  border: 0;
-  background: transparent;
-  color: var(--sb-text);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  transition: all 200ms ease;
-  overflow: hidden;
-  white-space: nowrap;
-}
-.db-sidebar__logout:hover:not(:disabled) {
-  background: oklch(0.577 0.245 27.325 / 0.12);
-  color: #f87171;
-}
-.db-sidebar__logout:disabled { opacity: 0.4; }
-.db-sidebar--collapsed .db-sidebar__logout { justify-content: center; padding: 0.5rem; }
+/* .db-sidebar__logout removed — logout is now inside the user dropdown */
 
 /* --- Main content area --- */
 .db-main {
