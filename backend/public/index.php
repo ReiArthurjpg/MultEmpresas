@@ -58,6 +58,22 @@ $router->add('POST', '/auth/logout', function () use (&$actor, $pdo, $audit, $ip
     $audit->write($actor['company_id'], $actor['user_id'], 'LOGOUT', 'users', $actor['user_id'], $ip(), $ua());
     return ['message' => 'Logout realizado.'];
 });
+$router->add('POST', '/auth/change-password', function () use (&$actor, $users, $audit, $input, $ip, $ua) {
+    $data = $input();
+    $currentPassword = (string) ($data['current_password'] ?? '');
+    $newPassword     = (string) ($data['new_password'] ?? '');
+    if (strlen($newPassword) < 8) { throw new RuntimeException('A nova senha deve ter pelo menos 8 caracteres.'); }
+    $user = $users->find((int) $actor['user_id'], $actor);
+    if (!$user || !password_verify($currentPassword, (string) $user['password'])) {
+        throw new RuntimeException('Senha atual incorreta.');
+    }
+    $users->save((int) $actor['user_id'], [
+        'password'             => password_hash($newPassword, PASSWORD_ARGON2ID),
+        'must_change_password' => 0,
+    ]);
+    $audit->write($actor['company_id'], $actor['user_id'], 'CHANGE_PASSWORD', 'users', $actor['user_id'], $ip(), $ua());
+    return ['message' => 'Senha alterada com sucesso.'];
+});
 
 $router->add('POST', '/auth/2fa/setup', function () use (&$actor, $users, $totp) {
     $secret = $totp->secret();
