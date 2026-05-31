@@ -11,6 +11,7 @@ import {
   X,
   LayoutGrid,
   List,
+  Search,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
@@ -123,15 +124,15 @@ const styles = {
   },
   hero: {
     position: "relative",
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 320px)",
-    gap: "1.5rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
     overflow: "hidden",
-    padding: "2rem",
+    padding: "1.5rem",
     border: "1px solid rgba(16, 185, 129, 0.16)",
     borderRadius: "28px",
     background:
-      "radial-gradient(circle at 8% 20%, rgba(16, 185, 129, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(59, 130, 246, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f9fbf9 52%, #f5f8ff 100%)",
+      "radial-gradient(circle at 8% 20%, rgba(16, 185, 129, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(59, 130, 246, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f9faf9 52%, #f5f8ff 100%)",
     boxShadow: "0 24px 70px rgba(15, 23, 42, 0.06)",
   },
   heroContent: {
@@ -140,8 +141,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: "1.25rem",
-    minHeight: "160px",
+    gap: "1rem",
+    minHeight: "0",
   },
   eyebrow: {
     display: "inline-flex",
@@ -215,6 +216,52 @@ const styles = {
     alignItems: "center",
     gap: "0.75rem",
     marginTop: "0.5rem",
+  },
+  toolbarRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "1rem 0",
+  },
+  toolbarActions: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+  filterPanel: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    marginBottom: "1rem",
+  },
+  filterField: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+  },
+  filterLabel: {
+    color: "#475569",
+    fontSize: "0.72rem",
+    fontWeight: 700,
+  },
+  filterInput: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  filterSelect: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
   },
   listContainer: {
     display: "flex",
@@ -515,6 +562,10 @@ export function UsersTab({ accessToken }: UsersTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<User["role"] | "">("");
+  const [companyFilter, setCompanyFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -561,6 +612,23 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       setTimeout(() => firstInputRef.current?.focus(), 50);
     }
   }, [modalMode]);
+
+  const filteredUsers = users.filter((user) => {
+    const search = searchTerm.trim().toLowerCase();
+    const searchMatch =
+      !search ||
+      [user.name, user.email, user.company_name, ROLE_LABELS[user.role]]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(search));
+
+    const roleMatch = !roleFilter || user.role === roleFilter;
+    const companyMatch = !companyFilter || String(user.company_id) === companyFilter;
+    const statusMatch =
+      statusFilter === "all" ||
+      (statusFilter === "active" ? user.active : !user.active);
+
+    return searchMatch && roleMatch && companyMatch && statusMatch;
+  });
 
   function openCreate() {
     setForm(EMPTY_FORM);
@@ -681,147 +749,188 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       {/* Header */}
       <div className="overview-hero-card" style={styles.hero}>
         <div style={styles.heroContent}>
-          <div style={styles.eyebrow}>
-            <UserCheck size={14} aria-hidden="true" />
-            Controle de acesso
-          </div>
-          <div>
-            <h2 id="users-tab-title" style={styles.title}>
-              Usuários
-            </h2>
-            <p style={styles.subtitle}>
-              Gerencie a equipe, atribua perfis de acesso, audite segurança e monitore status de ativação em tempo real.
-            </p>
-          </div>
+          <h2 id="users-tab-title" className="sr-only">
+            Usuários
+          </h2>
         </div>
 
         <aside className="overview-hero-aside" style={styles.heroAside}>
-          <div style={styles.statsRow}>
-            <div style={styles.statCard}>
-              <span style={styles.statLabel}>Total</span>
-              <strong style={styles.statValue}>{users.length}</strong>
+          <div style={styles.filterPanel}>
+            <div style={styles.filterField}>
+              <label htmlFor="user-search" style={styles.filterLabel}>
+                Buscar
+              </label>
+              <input
+                id="user-search"
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Nome, e-mail, empresa ou papel"
+                style={styles.filterInput}
+              />
             </div>
-            <div style={styles.statCard}>
-              <span style={styles.statLabel}>Ativos</span>
-              <strong style={styles.statValue}>
-                {users.filter((u) => u.active).length}
-              </strong>
-            </div>
-          </div>
-
-          <div style={styles.actionsRow}>
-            {/* View Mode Toggle Segmented Control */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                background: "#f1f5f9",
-                borderRadius: "12px",
-                padding: "0.25rem",
-                border: "1px solid #e2e8f0",
-                flex: 1,
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  flex: 1,
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: viewMode === "list" ? "#ffffff" : "transparent",
-                  color: viewMode === "list" ? "#0f172a" : "#64748b",
-                  boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
+            <div style={styles.filterField}>
+              <label htmlFor="user-role" style={styles.filterLabel}>
+                Perfil
+              </label>
+              <select
+                id="user-role"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value as User["role"] | "")}
+                style={styles.filterSelect}
               >
-                <List size={14} />
-                Lista
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  flex: 1,
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: viewMode === "grid" ? "#ffffff" : "transparent",
-                  color: viewMode === "grid" ? "#0f172a" : "#64748b",
-                  boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <LayoutGrid size={14} />
-                Cards
-              </button>
+                <option value="">Todos os perfis</option>
+                <option value="MASTER">Master</option>
+                <option value="ADMIN">Administrador</option>
+                <option value="OPERATOR">Operador</option>
+              </select>
             </div>
-
-            <button
-              className="secondary-button"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.58rem 0.65rem",
-                borderRadius: "12px",
-                fontSize: "0.78rem",
-                fontWeight: 850,
-                cursor: "pointer",
-                justifyContent: "center",
-                border: "1px solid #cbd5e1",
-                background: "#ffffff",
-                color: "#334155",
-              }}
-              onClick={fetchUsers}
-              disabled={loading}
-              type="button"
-              aria-label="Recarregar lista"
-              data-tooltip="Recarregar"
-            >
-              <RefreshCw size={14} className={cn(loading && "spinner")} aria-hidden="true" />
-            </button>
-            <button
-              className="primary-button"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.58rem 0.9rem",
-                borderRadius: "12px",
-                fontSize: "0.78rem",
-                fontWeight: 850,
-                cursor: "pointer",
-                justifyContent: "center",
-                background: "linear-gradient(135deg, #059669, #10b981)",
-                color: "#ffffff",
-                border: "none",
-                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
-              }}
-              onClick={openCreate}
-              type="button"
-              id="btn-create-user"
-              data-tooltip="Novo usuário"
-            >
-              <Plus size={16} aria-hidden="true" />
-            </button>
+            <div style={styles.filterField}>
+              <label htmlFor="user-company" style={styles.filterLabel}>
+                Empresa
+              </label>
+              <select
+                id="user-company"
+                value={companyFilter}
+                onChange={(e) => setCompanyFilter(e.target.value)}
+                style={styles.filterSelect}
+              >
+                <option value="">Todas as empresas</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={String(company.id)}>
+                    {company.company_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={styles.filterField}>
+              <label htmlFor="user-status" style={styles.filterLabel}>
+                Status
+              </label>
+              <select
+                id="user-status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                style={styles.filterSelect}
+              >
+                <option value="all">Todos</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+              </select>
+            </div>
           </div>
         </aside>
+
+        <div style={styles.toolbarRow}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              background: "#f1f5f9",
+              borderRadius: "12px",
+              padding: "0.25rem",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.35rem",
+              padding: "0.45rem 0.65rem",
+              borderRadius: "9px",
+              border: "none",
+              background: viewMode === "list" ? "#ffffff" : "transparent",
+              color: viewMode === "list" ? "#0f172a" : "#64748b",
+              boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+              fontSize: "0.75rem",
+              fontWeight: 800,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <List size={14} />
+            Lista
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.35rem",
+              padding: "0.45rem 0.65rem",
+              borderRadius: "9px",
+              border: "none",
+              background: viewMode === "grid" ? "#ffffff" : "transparent",
+              color: viewMode === "grid" ? "#0f172a" : "#64748b",
+              boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+              fontSize: "0.75rem",
+              fontWeight: 800,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <LayoutGrid size={14} />
+            Cards
+          </button>
+        </div>
+
+        <div style={styles.toolbarActions}>
+          <button
+            className="secondary-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              padding: "0.58rem 0.65rem",
+              borderRadius: "12px",
+              fontSize: "0.78rem",
+              fontWeight: 850,
+              cursor: "pointer",
+              justifyContent: "center",
+              border: "1px solid #cbd5e1",
+              background: "#ffffff",
+              color: "#334155",
+            }}
+            onClick={fetchUsers}
+            disabled={loading}
+            type="button"
+            aria-label="Recarregar lista"
+            data-tooltip="Recarregar"
+          >
+            <RefreshCw size={14} className={cn(loading && "spinner")} aria-hidden="true" />
+          </button>
+          <button
+            className="primary-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              padding: "0.58rem 0.9rem",
+              borderRadius: "12px",
+              fontSize: "0.78rem",
+              fontWeight: 850,
+              cursor: "pointer",
+              justifyContent: "center",
+              background: "linear-gradient(135deg, #059669, #10b981)",
+              color: "#ffffff",
+              border: "none",
+              boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
+            }}
+            onClick={openCreate}
+            type="button"
+            id="btn-create-user"
+            data-tooltip="Novo usuário"
+          >
+            <Plus size={16} aria-hidden="true" />
+          </button>
+        </div>
+        </div>
       </div>
 
       {/* Error banner */}
@@ -924,6 +1033,44 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           >
             <Plus size={14} aria-hidden="true" /> Criar primeiro usuário
           </button>
+        </div>
+      ) : filteredUsers.length === 0 ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "1.25rem",
+            padding: "4rem 2rem",
+            background: "#ffffff",
+            border: "1px solid #eef2f6",
+            borderRadius: "24px",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: "64px",
+              height: "64px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "20px",
+              background: "rgba(100, 116, 139, 0.08)",
+              color: "#64748b",
+            }}
+          >
+            <Search size={32} aria-hidden="true" />
+          </div>
+          <div>
+            <h4 style={{ margin: 0, color: "#0f172a", fontSize: "1.1rem", fontWeight: 800 }}>
+              Nenhum usuário encontrado
+            </h4>
+            <p style={{ margin: "0.25rem 0 0", color: "#64748b", fontSize: "0.9rem" }}>
+              Ajuste os filtros para encontrar usuários ativos ou inativos.
+            </p>
+          </div>
         </div>
       ) : viewMode === "grid" ? (
         <div style={styles.gridContainer} role="region" aria-label="Lista de usuários em cards">
@@ -1039,73 +1186,16 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                     >
                       <Edit2 size={13} aria-hidden="true" />
                     </button>
-                    {confirmDeleteId === user.id ? (
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.25rem",
-                          background: "#fef2f2",
-                          border: "1px solid #fee2e2",
-                          padding: "0.2rem 0.4rem",
-                          borderRadius: "8px",
-                          animation: "fadeIn 0.15s ease",
-                        }}
-                      >
-                        <button
-                          className="icon-button"
-                          style={{
-                            ...actionBtnDangerStyle,
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#ef4444",
-                            color: "#ffffff",
-                          }}
-                          onClick={() => handleDelete(user.id)}
-                          disabled={deletingId === user.id}
-                          type="button"
-                          aria-label="Confirmar exclusão"
-                          data-tooltip="Confirmar"
-                        >
-                          {deletingId === user.id ? (
-                            <Loader2 size={10} className="spinner" />
-                          ) : (
-                            <Trash2 size={10} />
-                          )}
-                        </button>
-                        <button
-                          className="icon-button"
-                          style={{
-                            ...actionBtnStyle,
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#e2e8f0",
-                            color: "#475569",
-                          }}
-                          onClick={() => setConfirmDeleteId(null)}
-                          type="button"
-                          aria-label="Cancelar exclusão"
-                          data-tooltip="Cancelar"
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        className="icon-button"
-                        style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
-                        onClick={() => setConfirmDeleteId(user.id)}
-                        type="button"
-                        aria-label={`Excluir ${user.name}`}
-                        data-tooltip="Excluir"
-                      >
-                        <Trash2 size={13} aria-hidden="true" />
-                      </button>
-                    )}
+                    <button
+                      className="icon-button"
+                      style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
+                      onClick={() => setConfirmDeleteId(user.id)}
+                      type="button"
+                      aria-label={`Excluir ${user.name}`}
+                      data-tooltip="Excluir"
+                    >
+                      <Trash2 size={13} aria-hidden="true" />
+                    </button>
                   </div>
                 </div>
               </article>
@@ -1255,74 +1345,97 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                   >
                     <Edit2 size={14} aria-hidden="true" />
                   </button>
-                  {confirmDeleteId === user.id ? (
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        background: "#fef2f2",
-                        border: "1px solid #fee2e2",
-                        padding: "0.2rem 0.4rem",
-                        borderRadius: "8px",
-                        animation: "fadeIn 0.15s ease",
-                      }}
-                    >
-                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.1rem" }}>Excluir?</span>
-                      <button
-                        className="icon-button"
-                        style={{
-                          ...actionBtnDangerStyle,
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          border: "none",
-                          background: "#ef4444",
-                          color: "#ffffff",
-                        }}
-                        onClick={() => handleDelete(user.id)}
-                        disabled={deletingId === user.id}
-                        type="button"
-                        aria-label="Confirmar exclusão"
-                        data-tooltip="Confirmar"
-                      >
-                        {deletingId === user.id ? <Loader2 size={10} className="spinner" /> : <Trash2 size={10} />}
-                      </button>
-                      <button
-                        className="icon-button"
-                        style={{
-                          ...actionBtnStyle,
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          border: "none",
-                          background: "#e2e8f0",
-                          color: "#475569",
-                        }}
-                        onClick={() => setConfirmDeleteId(null)}
-                        type="button"
-                        aria-label="Cancelar exclusão"
-                        data-tooltip="Cancelar"
-                      >
-                        <X size={10} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="icon-button"
-                      style={actionBtnDangerStyle}
-                      onClick={() => setConfirmDeleteId(user.id)}
-                      type="button"
-                      aria-label={`Excluir ${user.name}`}
-                      data-tooltip="Excluir"
-                    >
-                      <Trash2 size={14} aria-hidden="true" />
-                    </button>
-                  )}
+                  <button
+                    className="icon-button"
+                    style={actionBtnDangerStyle}
+                    onClick={() => setConfirmDeleteId(user.id)}
+                    type="button"
+                    aria-label={`Excluir ${user.name}`}
+                    data-tooltip="Excluir"
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {confirmDeleteId !== null && (
+        <div
+          style={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmDeleteId(null);
+          }}
+        >
+          <div style={styles.modal}>
+            <div style={styles.modalHeader}>
+              <h3 id="delete-dialog-title" style={styles.modalTitle}>
+                Confirmar exclusão
+              </h3>
+              <button
+                className="icon-button"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+                aria-label="Fechar diálogo de exclusão"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={styles.modalBody}>
+              <p style={{ margin: 0, color: "#334155", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
+              </p>
+              <p style={{ margin: "0.75rem 0 0", color: "#64748b", fontSize: "0.88rem" }}>
+                {users.find((user) => user.id === confirmDeleteId)?.name ?? "Usuário"}
+              </p>
+            </div>
+            <div style={styles.modalFooter}>
+              <button
+                className="secondary-button"
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                className="primary-button"
+                onClick={() => handleDelete(confirmDeleteId)}
+                disabled={deletingId === confirmDeleteId}
+                type="button"
+                style={{
+                  background: "#dc2626",
+                  color: "#ffffff",
+                  border: "none",
+                  minWidth: "120px",
+                }}
+              >
+                {deletingId === confirmDeleteId ? (
+                  <>
+                    <Loader2 size={14} className="spinner" aria-hidden="true" /> Excluindo…
+                  </>
+                ) : (
+                  "Excluir usuário"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

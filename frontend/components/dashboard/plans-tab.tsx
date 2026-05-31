@@ -379,6 +379,45 @@ const styles = {
     boxShadow: "0 10px 30px rgba(15, 23, 42, 0.03)",
     transition: "all 0.2s ease",
   },
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    marginTop: "0.5rem",
+  },
+  listRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "1rem",
+    padding: "1rem 1.25rem",
+    border: "1px solid #eef2f6",
+    borderRadius: "22px",
+    background: "#ffffff",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+    transition: "all 0.18s ease",
+  },
+  rowMain: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+    flex: 1,
+    minWidth: 0,
+  },
+  rowMeta: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.65rem",
+    alignItems: "center",
+    color: "#64748b",
+    fontSize: "0.82rem",
+  },
+  rowActions: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.4rem",
+    flexShrink: 0,
+  },
   cardTop: {
     display: "flex",
     alignItems: "flex-start",
@@ -1093,239 +1132,173 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                   >
                     <Edit2 size={13} aria-hidden="true" />
                   </button>
-                  {confirmDeleteId === plan.id ? (
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        background: "#fef2f2",
-                        border: "1px solid #fee2e2",
-                        padding: "0.2rem 0.4rem",
-                        borderRadius: "8px",
-                        animation: "fadeIn 0.15s ease",
-                      }}
-                    >
-                      <button
-                        className="icon-button"
-                        style={{
-                          ...actionBtnDangerStyle,
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          border: "none",
-                          background: "#ef4444",
-                          color: "#ffffff",
-                        }}
-                        onClick={() => handleDelete(plan.id)}
-                        type="button"
-                        aria-label="Confirmar exclusão"
-                      >
-                        <Trash2 size={10} />
-                      </button>
-                      <button
-                        className="icon-button"
-                        style={{
-                          ...actionBtnStyle,
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          border: "none",
-                          background: "#e2e8f0",
-                          color: "#475569",
-                        }}
-                        onClick={() => setConfirmDeleteId(null)}
-                        type="button"
-                        aria-label="Cancelar exclusão"
-                      >
-                        <X size={10} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="icon-button"
-                      style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
-                      onClick={() => setConfirmDeleteId(plan.id)}
-                      type="button"
-                      aria-label={`Excluir ${plan.name}`}
-                    >
-                      <Trash2 size={13} aria-hidden="true" />
-                    </button>
-                  )}
+                  <button
+                    className="icon-button"
+                    style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
+                    onClick={() => setConfirmDeleteId(plan.id)}
+                    type="button"
+                    aria-label={`Excluir ${plan.name}`}
+                  >
+                    <Trash2 size={13} aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             </article>
           ))}
         </div>
       ) : (
-        <div style={styles.tableContainer} role="region" aria-label="Lista de planos" tabIndex={0}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col" style={styles.th}>Plano</th>
-                <th scope="col" style={styles.th}>Preço</th>
-                <th scope="col" style={styles.th}>Status</th>
-                <th scope="col" style={styles.th}>Permissões Ativas</th>
-                <th scope="col" style={{ ...styles.th, textAlign: "right" }}><span className="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((plan) => (
-                <tr key={plan.id} style={styles.tr} className="table-row-hover">
-                  <td style={styles.td}>
-                    <div>
-                      <div style={styles.planName}>{plan.name}</div>
-                      {plan.description && (
-                        <span style={styles.planDescText}>
-                          {plan.description}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={styles.td}>
-                    <strong style={{ color: "#0f172a", fontSize: "0.95rem" }}>
-                      {plan.price === 0
-                        ? "Grátis"
-                        : plan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                    </strong>
-                  </td>
-                  <td style={styles.td}>
-                    {plan.active ? (
-                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.active }}>
-                        Ativo
-                      </span>
-                    ) : (
-                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.inactive }}>
-                        Inativo
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ ...styles.td, maxWidth: "450px" }}>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
-                      {plan.permissions && plan.permissions.length > 0 ? (
-                        <>
-                          {plan.permissions.slice(0, 4).map((perm) => (
-                            <span
-                              key={perm}
-                              style={{
-                                ...badgeBaseStyle,
-                                ...PILL_STYLES.permission,
-                                fontSize: "0.72rem",
-                                padding: "0.2rem 0.6rem",
-                                borderRadius: "8px",
-                                background: "rgba(124, 58, 237, 0.05)",
-                                border: "1px solid rgba(124, 58, 237, 0.12)",
-                                color: "#6d28d9",
-                              }}
-                              title={PERMISSIONS.find((p) => p.id === perm)?.label}
-                            >
-                              {PERMISSIONS.find((p) => p.id === perm)?.label || perm}
-                            </span>
-                          ))}
-                          {plan.permissions.length > 4 && (
-                            <span
-                              style={{
-                                ...badgeBaseStyle,
-                                fontSize: "0.72rem",
-                                padding: "0.2rem 0.6rem",
-                                borderRadius: "8px",
-                                background: "#ede9fe",
-                                border: "1px solid rgba(124, 58, 237, 0.2)",
-                                color: "#7c3aed",
-                                fontWeight: 800,
-                              }}
-                              title={plan.permissions.slice(4).map(perm => PERMISSIONS.find((p) => p.id === perm)?.label || perm).join(", ")}
-                            >
-                              +{plan.permissions.length - 4} acessos
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
-                          Nenhuma
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ ...styles.td, textAlign: "right" }}>
-                    <div style={{ display: "inline-flex", gap: "0.4rem", justifyContent: "flex-end" }}>
-                      <button
-                        className="icon-button"
-                        style={actionBtnStyle}
-                        onClick={() => openEdit(plan)}
-                        title="Editar plano"
-                        type="button"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      {confirmDeleteId === plan.id ? (
-                        <div
+        <div style={styles.listContainer} role="region" aria-label="Lista de planos">
+          {plans.map((plan) => (
+            <div key={plan.id} style={styles.listRow} className="table-row-hover">
+              <div style={styles.rowMain}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.9rem", flexWrap: "wrap" }}>
+                  <div>
+                    <div style={styles.planName}>{plan.name}</div>
+                    {plan.description && <div style={styles.planDescText}>{plan.description}</div>}
+                  </div>
+                  <strong style={styles.planPriceTag}>
+                    {plan.price === 0
+                      ? "Grátis"
+                      : plan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </strong>
+                </div>
+                <div style={styles.rowMeta}>
+                  {plan.active ? (
+                    <span style={{ ...badgeBaseStyle, ...PILL_STYLES.active, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                      Ativo
+                    </span>
+                  ) : (
+                    <span style={{ ...badgeBaseStyle, ...PILL_STYLES.inactive, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                      Inativo
+                    </span>
+                  )}
+                  <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
+                    {plan.permissions?.length ?? 0} recursos
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.55rem" }}>
+                  {plan.permissions && plan.permissions.length > 0 ? (
+                    plan.permissions.slice(0, 5).map((perm) => {
+                      const pInfo = PERMISSIONS.find((p) => p.id === perm);
+                      return (
+                        <span
+                          key={perm}
                           style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "0.25rem",
-                            background: "#fef2f2",
-                            border: "1px solid #fee2e2",
-                            padding: "0.25rem 0.5rem",
-                            borderRadius: "10px",
-                            animation: "fadeIn 0.15s ease",
+                            ...badgeBaseStyle,
+                            ...PILL_STYLES.permission,
+                            fontSize: "0.72rem",
+                            padding: "0.2rem 0.55rem",
+                            borderRadius: "8px",
+                            background: "rgba(124, 58, 237, 0.05)",
+                            border: "1px solid rgba(124, 58, 237, 0.12)",
+                            color: "#6d28d9",
                           }}
+                          title={pInfo?.label}
                         >
-                          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.15rem" }}>
-                            Excluir?
-                          </span>
-                          <button
-                            className="icon-button"
-                            style={{
-                              ...actionBtnDangerStyle,
-                              width: "26px",
-                              height: "26px",
-                              borderRadius: "6px",
-                              border: "none",
-                              background: "#ef4444",
-                              color: "#ffffff",
-                            }}
-                            onClick={() => handleDelete(plan.id)}
-                            type="button"
-                            aria-label="Confirmar exclusão"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                          <button
-                            className="icon-button"
-                            style={{
-                              ...actionBtnStyle,
-                              width: "26px",
-                              height: "26px",
-                              borderRadius: "6px",
-                              border: "none",
-                              background: "#e2e8f0",
-                              color: "#475569",
-                            }}
-                            onClick={() => setConfirmDeleteId(null)}
-                            type="button"
-                            aria-label="Cancelar exclusão"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          className="icon-button"
-                          style={actionBtnDangerStyle}
-                          onClick={() => setConfirmDeleteId(plan.id)}
-                          title="Remover plano"
-                          type="button"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                          {pInfo?.label || perm}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
+                      Nenhum recurso específico
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div style={styles.rowActions}>
+                <button
+                  className="icon-button"
+                  style={actionBtnStyle}
+                  onClick={() => openEdit(plan)}
+                  title="Editar plano"
+                  type="button"
+                >
+                  <Edit2 size={14} />
+                </button>
+                <button
+                  className="icon-button"
+                  style={actionBtnDangerStyle}
+                  onClick={() => setConfirmDeleteId(plan.id)}
+                  title="Remover plano"
+                  type="button"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {confirmDeleteId !== null && (
+        <div
+          style={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmDeleteId(null);
+          }}
+        >
+          <div style={styles.modal}>
+            <div style={styles.modalHeader}>
+              <h3 id="delete-dialog-title" style={styles.modalTitle}>
+                Confirmar exclusão
+              </h3>
+              <button
+                className="icon-button"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+                aria-label="Fechar diálogo de exclusão"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={styles.modalBody}>
+              <p style={{ margin: 0, color: "#334155", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.
+              </p>
+              <p style={{ margin: "0.75rem 0 0", color: "#64748b", fontSize: "0.88rem" }}>
+                {plans.find((plan) => plan.id === confirmDeleteId)?.name ?? "Plano"}
+              </p>
+            </div>
+            <div style={styles.modalFooter}>
+              <button
+                className="secondary-button"
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                className="primary-button"
+                onClick={() => handleDelete(confirmDeleteId)}
+                type="button"
+                style={{
+                  background: "#dc2626",
+                  color: "#ffffff",
+                  border: "none",
+                  minWidth: "120px",
+                }}
+              >
+                Excluir plano
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

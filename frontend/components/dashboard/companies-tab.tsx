@@ -227,6 +227,51 @@ const styles = {
     fontSize: "0.75rem",
     fontWeight: 700,
   },
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    marginTop: "0.5rem",
+  },
+  listRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "1rem",
+    padding: "1rem 1.25rem",
+    border: "1px solid #eef2f6",
+    borderRadius: "22px",
+    background: "#ffffff",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+    transition: "all 0.18s ease",
+  },
+  listLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.85rem",
+    minWidth: 0,
+    flex: 1,
+  },
+  listMain: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.3rem",
+    minWidth: 0,
+  },
+  rowMeta: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.5rem",
+    alignItems: "center",
+    color: "#64748b",
+    fontSize: "0.8rem",
+  },
+  listRight: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.4rem",
+    flexShrink: 0,
+  },
   // Grid/Cards styling
   gridContainer: {
     display: "grid",
@@ -1054,65 +1099,15 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                     >
                       <Edit2 size={13} aria-hidden="true" />
                     </button>
-                    {confirmDeleteId === company.id ? (
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.25rem",
-                          background: "#fef2f2",
-                          border: "1px solid #fee2e2",
-                          padding: "0.2rem 0.4rem",
-                          borderRadius: "8px",
-                          animation: "fadeIn 0.15s ease",
-                        }}
-                      >
-                        <button
-                          className="icon-button"
-                          style={{
-                            ...actionBtnDangerStyle,
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#ef4444",
-                            color: "#ffffff",
-                          }}
-                          onClick={() => handleDelete(company.id)}
-                          type="button"
-                          aria-label="Confirmar exclusão"
-                        >
-                          <Trash2 size={10} />
-                        </button>
-                        <button
-                          className="icon-button"
-                          style={{
-                            ...actionBtnStyle,
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#e2e8f0",
-                            color: "#475569",
-                          }}
-                          onClick={() => setConfirmDeleteId(null)}
-                          type="button"
-                          aria-label="Cancelar exclusão"
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        className="icon-button"
-                        style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
-                        onClick={() => setConfirmDeleteId(company.id)}
-                        type="button"
-                        aria-label={`Excluir ${company.company_name}`}
-                      >
-                        <Trash2 size={13} aria-hidden="true" />
-                      </button>
-                    )}
+                    <button
+                      className="icon-button"
+                      style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
+                      onClick={() => setConfirmDeleteId(company.id)}
+                      type="button"
+                      aria-label={`Excluir ${company.company_name}`}
+                    >
+                      <Trash2 size={13} aria-hidden="true" />
+                    </button>
                   </div>
                 </div>
               </article>
@@ -1120,161 +1115,156 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
           })}
         </div>
       ) : (
-        <div style={styles.tableContainer} role="region" aria-label="Lista de empresas" tabIndex={0}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col" style={styles.th}>Empresa / CNPJ</th>
-                <th scope="col" style={styles.th}>Contato</th>
-                <th scope="col" style={styles.th}>Localidade</th>
-                <th scope="col" style={styles.th}>Plano</th>
-                <th scope="col" style={styles.th}>Status</th>
-                <th scope="col" style={{ ...styles.th, textAlign: "right" }}><span className="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCompanies.map((company) => {
-                const planName = plans.find((p) => p.id === company.plan_id)?.name || "Nenhum Plano";
-                return (
-                  <tr key={company.id} style={styles.tr} className="table-row-hover">
-                    <td style={styles.td}>
-                      <div style={styles.companyCell}>
-                        <div style={styles.companyLogo}>
-                          {company.logo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={`http://localhost:8010${company.logo_url}`}
-                              alt=""
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = "none";
-                              }}
-                            />
-                          ) : (
-                            <Building2 size={16} style={{ color: "#64748b" }} />
-                          )}
-                        </div>
-                        <div>
-                          <div style={styles.companyName}>{company.company_name}</div>
-                          {company.trade_name && (
-                            <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>
-                              {company.trade_name}
-                            </div>
-                          )}
-                          <span style={styles.cnpjText}>
-                            CNPJ: {company.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}
-                          </span>
-                        </div>
+        <div style={styles.listContainer} role="region" aria-label="Lista de empresas">
+          {filteredCompanies.map((company) => {
+            const planName = plans.find((p) => p.id === company.plan_id)?.name || "Nenhum Plano";
+            return (
+              <div key={company.id} style={styles.listRow} className="table-row-hover">
+                <div style={styles.listLeft}>
+                  <div style={styles.companyLogo}>
+                    {company.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`http://localhost:8010${company.logo_url}`}
+                        alt=""
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <Building2 size={16} style={{ color: "#64748b" }} />
+                    )}
+                  </div>
+
+                  <div style={styles.listMain}>
+                    <div style={styles.companyName}>{company.company_name}</div>
+                    {company.trade_name && (
+                      <div style={{ color: "#64748b", fontSize: "0.8rem", fontWeight: 600 }}>
+                        {company.trade_name}
                       </div>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={{ color: "#334155", fontWeight: 500 }}>{company.email}</div>
-                      {company.phone && <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{company.phone}</div>}
-                    </td>
-                    <td style={styles.td}>
-                      <div style={{ color: "#334155", fontWeight: 500 }}>{company.city || "—"}</div>
-                      {company.state && (
-                        <span style={{ ...badgeBaseStyle, ...PILL_STYLES.stateBadge, fontSize: "0.65rem", padding: "0.05rem 0.3rem", marginTop: "0.15rem" }}>
-                          {company.state}
-                        </span>
-                      )}
-                    </td>
-                    <td style={styles.td}>
-                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.plan }}>
-                        {planName}
+                    )}
+                    <span style={styles.cnpjText}>
+                      CNPJ: {company.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ ...styles.listMain, flex: 1, minWidth: 0 }}>
+                  <div style={styles.rowMeta}>
+                    <span>{company.email}</span>
+                    {company.phone && <span>{company.phone}</span>}
+                  </div>
+                  <div style={styles.rowMeta}>
+                    <span>{company.city || "—"}{company.state ? `, ${company.state}` : ""}</span>
+                    <span style={{ ...badgeBaseStyle, ...PILL_STYLES.plan, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                      {planName}
+                    </span>
+                    {company.active ? (
+                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.active, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                        Ativo
                       </span>
-                    </td>
-                    <td style={styles.td}>
-                      {company.active ? (
-                        <span style={{ ...badgeBaseStyle, ...PILL_STYLES.active }}>
-                          Ativo
-                        </span>
-                      ) : (
-                        <span style={{ ...badgeBaseStyle, ...PILL_STYLES.inactive }}>
-                          Inativo
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ ...styles.td, textAlign: "right" }}>
-                      <div style={{ display: "inline-flex", gap: "0.4rem", justifyContent: "flex-end" }}>
-                        <button
-                          className="icon-button"
-                          style={actionBtnStyle}
-                          onClick={() => openEdit(company)}
-                          title="Editar empresa"
-                          type="button"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        {confirmDeleteId === company.id ? (
-                          <div
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "0.25rem",
-                              background: "#fef2f2",
-                              border: "1px solid #fee2e2",
-                              padding: "0.25rem 0.5rem",
-                              borderRadius: "10px",
-                              animation: "fadeIn 0.15s ease",
-                            }}
-                          >
-                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.15rem" }}>
-                              Excluir?
-                            </span>
-                            <button
-                              className="icon-button"
-                              style={{
-                                ...actionBtnDangerStyle,
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#ef4444",
-                                color: "#ffffff",
-                              }}
-                              onClick={() => handleDelete(company.id)}
-                              type="button"
-                              aria-label="Confirmar exclusão"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                            <button
-                              className="icon-button"
-                              style={{
-                                ...actionBtnStyle,
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#e2e8f0",
-                                color: "#475569",
-                              }}
-                              onClick={() => setConfirmDeleteId(null)}
-                              type="button"
-                              aria-label="Cancelar exclusão"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            className="icon-button"
-                            style={actionBtnDangerStyle}
-                            onClick={() => setConfirmDeleteId(company.id)}
-                            title="Remover empresa"
-                            type="button"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    ) : (
+                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.inactive, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                        Inativo
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={styles.listRight}>
+                  <button
+                    className="icon-button"
+                    style={actionBtnStyle}
+                    onClick={() => openEdit(company)}
+                    title="Editar empresa"
+                    type="button"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button
+                    className="icon-button"
+                    style={actionBtnDangerStyle}
+                    onClick={() => setConfirmDeleteId(company.id)}
+                    title="Remover empresa"
+                    type="button"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {confirmDeleteId !== null && (
+        <div
+          style={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmDeleteId(null);
+          }}
+        >
+          <div style={styles.modal}>
+            <div style={styles.modalHeader}>
+              <h3 id="delete-dialog-title" style={styles.modalTitle}>
+                Confirmar exclusão
+              </h3>
+              <button
+                className="icon-button"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+                aria-label="Fechar diálogo de exclusão"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={styles.modalBody}>
+              <p style={{ margin: 0, color: "#334155", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                Tem certeza que deseja excluir esta empresa? Esta ação não pode ser desfeita.
+              </p>
+              <p style={{ margin: "0.75rem 0 0", color: "#64748b", fontSize: "0.88rem" }}>
+                {companies.find((company) => company.id === confirmDeleteId)?.company_name ?? "Empresa"}
+              </p>
+            </div>
+            <div style={styles.modalFooter}>
+              <button
+                className="secondary-button"
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                className="primary-button"
+                onClick={() => handleDelete(confirmDeleteId)}
+                type="button"
+                style={{
+                  background: "#dc2626",
+                  color: "#ffffff",
+                  border: "none",
+                  minWidth: "120px",
+                }}
+              >
+                Excluir empresa
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
