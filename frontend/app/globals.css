@@ -795,6 +795,49 @@ a {
 .icon-button:hover { background: var(--muted); color: var(--foreground); }
 .icon-button--danger:hover { background: oklch(0.577 0.245 27.325 / 0.10); color: var(--destructive); border-color: oklch(0.577 0.245 27.325 / 0.30); }
 
+/* --- Tooltip system (data-tooltip="text") --- */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  white-space: nowrap;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 7px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 9999;
+}
+[data-tooltip]::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border: 5px solid transparent;
+  border-top-color: #0f172a;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 9999;
+}
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 .tab-cta { padding: 0.5rem 1rem; min-height: auto; }
 
 .primary-button { width: auto; padding: 0.625rem 1.25rem; }

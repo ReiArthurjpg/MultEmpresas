@@ -13,6 +13,7 @@ import {
   List,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import {
   createUser,
   deleteUser,
@@ -24,6 +25,64 @@ import {
   type Company,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+// ── Tooltip via portal (bypasses overflow:hidden parents) ─────────────────────
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  const show = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setPos({
+      top: r.top + window.scrollY - 8,
+      left: r.left + window.scrollX + r.width / 2,
+    });
+  };
+  const hide = () => setPos(null);
+
+  return (
+    <div ref={ref} onMouseEnter={show} onMouseLeave={hide} style={{ display: "contents" }}>
+      {children}
+      {pos &&
+        createPortal(
+          <div
+            style={{
+              position: "absolute",
+              top: pos.top,
+              left: pos.left,
+              transform: "translate(-50%, -100%)",
+              background: "#0f172a",
+              color: "#f8fafc",
+              fontSize: "0.68rem",
+              fontWeight: 600,
+              padding: "0.28rem 0.55rem",
+              borderRadius: "7px",
+              whiteSpace: "nowrap",
+              boxShadow: "0 4px 12px rgba(15,23,42,0.22)",
+              pointerEvents: "none",
+              zIndex: 99999,
+              animation: "fadeIn 0.1s ease",
+            }}
+          >
+            {text}
+            <span
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                borderWidth: "4px",
+                borderStyle: "solid",
+                borderColor: "#0f172a transparent transparent transparent",
+              }}
+            />
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}
 
 type UsersTabProps = {
   accessToken: string;
@@ -157,42 +216,27 @@ const styles = {
     gap: "0.75rem",
     marginTop: "0.5rem",
   },
-  tableContainer: {
-    overflow: "hidden",
-    border: "1px solid #eef2f6",
-    borderRadius: "24px",
-    background: "#ffffff",
-    boxShadow: "0 16px 48px rgba(15, 23, 42, 0.04)",
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
     marginTop: "0.5rem",
   },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    textAlign: "left",
-  },
-  th: {
-    padding: "1.1rem 1.5rem",
-    background: "#f8fafc",
-    borderBottom: "1px solid #e2e8f0",
-    color: "#475569",
-    fontSize: "0.75rem",
-    fontWeight: 800,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-  tr: {
-    borderBottom: "1px solid #f1f5f9",
-    transition: "all 0.2s ease",
-  },
-  td: {
-    padding: "1rem 1.5rem",
-    verticalAlign: "middle",
-    color: "#334155",
-    fontSize: "0.9rem",
+  listRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "1rem 1.25rem",
+    border: "1px solid #eef2f6",
+    borderRadius: "18px",
+    background: "#ffffff",
+    boxShadow: "0 2px 10px rgba(15, 23, 42, 0.03)",
+    transition: "all 0.18s ease",
   },
   avatar: {
-    width: "40px",
-    height: "40px",
+    width: "42px",
+    height: "42px",
+    flexShrink: 0,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -200,15 +244,17 @@ const styles = {
     fontWeight: 850,
     fontSize: "0.95rem",
   },
-  userCell: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.85rem",
+  userInfo: {
+    flex: 1,
+    minWidth: 0,
   },
   userName: {
     fontWeight: 800,
     color: "#0f172a",
-    fontSize: "0.95rem",
+    fontSize: "0.93rem",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   warnLabel: {
     display: "inline-flex",
@@ -746,6 +792,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
               disabled={loading}
               type="button"
               aria-label="Recarregar lista"
+              data-tooltip="Recarregar"
             >
               <RefreshCw size={14} className={cn(loading && "spinner")} aria-hidden="true" />
             </button>
@@ -769,6 +816,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
               onClick={openCreate}
               type="button"
               id="btn-create-user"
+              data-tooltip="Novo usuário"
             >
               <Plus size={16} aria-hidden="true" />
             </button>
@@ -987,6 +1035,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                       onClick={() => openEdit(user)}
                       type="button"
                       aria-label={`Editar ${user.name}`}
+                      data-tooltip="Editar"
                     >
                       <Edit2 size={13} aria-hidden="true" />
                     </button>
@@ -1018,6 +1067,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                           disabled={deletingId === user.id}
                           type="button"
                           aria-label="Confirmar exclusão"
+                          data-tooltip="Confirmar"
                         >
                           {deletingId === user.id ? (
                             <Loader2 size={10} className="spinner" />
@@ -1039,6 +1089,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                           onClick={() => setConfirmDeleteId(null)}
                           type="button"
                           aria-label="Cancelar exclusão"
+                          data-tooltip="Cancelar"
                         >
                           <X size={10} />
                         </button>
@@ -1050,6 +1101,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                         onClick={() => setConfirmDeleteId(user.id)}
                         type="button"
                         aria-label={`Excluir ${user.name}`}
+                        data-tooltip="Excluir"
                       >
                         <Trash2 size={13} aria-hidden="true" />
                       </button>
@@ -1061,194 +1113,216 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           })}
         </div>
       ) : (
-        <div style={styles.tableContainer} role="region" aria-label="Lista de usuários" tabIndex={0}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col" style={styles.th}>Nome</th>
-                <th scope="col" style={styles.th}>Empresa</th>
-                <th scope="col" style={styles.th}>E-mail</th>
-                <th scope="col" style={styles.th}>Perfil</th>
-                <th scope="col" style={styles.th}>Status</th>
-                <th scope="col" style={styles.th}>2FA</th>
-                <th scope="col" style={{ ...styles.th, textAlign: "right" }}><span className="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => {
-                const avatarTheme = AVATAR_THEMES[user.role] ?? AVATAR_THEMES.OPERATOR;
-                return (
-                  <tr key={user.id} style={styles.tr} className="table-row-hover">
-                    <td style={styles.td}>
-                      <div style={styles.userCell}>
-                        <div
-                          style={{
-                            ...styles.avatar,
-                            background: avatarTheme.bg,
-                            color: avatarTheme.color,
-                          }}
-                          aria-hidden="true"
-                        >
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={styles.userName}>{user.name}</div>
-                          {user.must_change_password && (
-                            <div style={styles.warnLabel}>
-                              <span style={{ fontSize: "0.8rem" }}>🔑</span> Troca de senha pendente
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ ...styles.td, color: "#475569", fontWeight: 700 }}>
-                      🏢 {user.company_name || <span style={{ color: "#94a3b8", fontStyle: "italic", fontWeight: 500 }}>Sem empresa</span>}
-                    </td>
-                    <td style={{ ...styles.td, color: "#64748b", fontWeight: 500 }}>{user.email}</td>
-                    <td style={styles.td}>
-                      <span
-                        style={{
-                          ...badgeBaseStyle,
-                          ...(PILL_STYLES[user.role.toLowerCase()] ?? PILL_STYLES.operator),
-                        }}
-                      >
-                        {ROLE_LABELS[user.role]}
+        <div style={styles.listContainer} role="region" aria-label="Lista de usuários">
+          {users.map((user) => {
+            const avatarTheme = AVATAR_THEMES[user.role] ?? AVATAR_THEMES.OPERATOR;
+            return (
+              <div
+                key={user.id}
+                style={{
+                  ...styles.listRow,
+                  opacity: user.active ? 1 : 0.65,
+                }}
+                className="table-row-hover"
+              >
+                {/* Avatar with active indicator */}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div
+                    style={{
+                      ...styles.avatar,
+                      background: avatarTheme.bg,
+                      color: avatarTheme.color,
+                    }}
+                    aria-hidden="true"
+                  >
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: "-2px",
+                      right: "-2px",
+                      width: "11px",
+                      height: "11px",
+                      borderRadius: "50%",
+                      border: "2px solid #ffffff",
+                      background: user.active ? "#10b981" : "#ef4444",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                    }}
+                    title={user.active ? "Ativo" : "Inativo"}
+                  />
+                </div>
+
+                {/* User info */}
+                <div style={styles.userInfo}>
+                  <div style={styles.userName}>{user.name}</div>
+                  <div style={{ color: "#64748b", fontSize: "0.8rem", fontWeight: 500, marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {user.email}
+                  </div>
+                  <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.35rem", alignItems: "center", flexWrap: "wrap" }}>
+                    <span
+                      style={{
+                        ...badgeBaseStyle,
+                        ...(PILL_STYLES[user.role.toLowerCase()] ?? PILL_STYLES.operator),
+                        fontSize: "0.6rem",
+                        padding: "0.1rem 0.45rem",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      {ROLE_LABELS[user.role]}
+                    </span>
+                    {user.company_name && (
+                      <span style={{
+                        ...badgeBaseStyle,
+                        background: "rgba(148, 163, 184, 0.07)",
+                        border: "1px solid rgba(148, 163, 184, 0.15)",
+                        color: "#64748b",
+                        fontSize: "0.6rem",
+                        padding: "0.1rem 0.45rem",
+                        borderRadius: "6px",
+                        textTransform: "none",
+                        letterSpacing: "0",
+                        fontWeight: 600,
+                      }}>
+                        🏢 {user.company_name}
                       </span>
-                    </td>
-                    <td style={styles.td}>
-                      {user.active ? (
-                        <span
-                          style={{
-                            ...badgeBaseStyle,
-                            ...PILL_STYLES.active,
-                          }}
-                        >
-                          <UserCheck size={12} aria-hidden="true" /> Ativo
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            ...badgeBaseStyle,
-                            ...PILL_STYLES.inactive,
-                          }}
-                        >
-                          <UserX size={12} aria-hidden="true" /> Inativo
-                        </span>
-                      )}
-                    </td>
-                    <td style={styles.td}>
-                      {user.two_factor_enabled ? (
-                        <span
-                          style={{
-                            ...badgeBaseStyle,
-                            ...PILL_STYLES["2fa-on"],
-                          }}
-                        >
-                          ON
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            ...badgeBaseStyle,
-                            ...PILL_STYLES["2fa-off"],
-                          }}
-                        >
-                          OFF
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ ...styles.td, textAlign: "right" }}>
-                      <div
+                    )}
+                    {user.must_change_password && (
+                      <span style={{
+                        ...badgeBaseStyle,
+                        background: "rgba(217, 119, 6, 0.08)",
+                        border: "1px solid rgba(217, 119, 6, 0.18)",
+                        color: "#d97706",
+                        fontSize: "0.6rem",
+                        padding: "0.1rem 0.45rem",
+                        borderRadius: "6px",
+                      }}>
+                        🔑 Trocar senha
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2FA badge */}
+                <div style={{ flexShrink: 0 }}>
+                  {user.two_factor_enabled ? (
+                    <span
+                      title="2FA ativo"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "8px",
+                        background: "rgba(16, 185, 129, 0.1)",
+                        border: "1px solid rgba(16, 185, 129, 0.2)",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      🔐
+                    </span>
+                  ) : (
+                    <span
+                      title="2FA inativo"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "8px",
+                        background: "rgba(148, 163, 184, 0.06)",
+                        border: "1px solid rgba(148, 163, 184, 0.14)",
+                        fontSize: "0.85rem",
+                        opacity: 0.45,
+                      }}
+                    >
+                      🔓
+                    </span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+                  <button
+                    className="icon-button"
+                    style={actionBtnStyle}
+                    onClick={() => openEdit(user)}
+                    type="button"
+                    aria-label={`Editar ${user.name}`}
+                    data-tooltip="Editar"
+                  >
+                    <Edit2 size={14} aria-hidden="true" />
+                  </button>
+                  {confirmDeleteId === user.id ? (
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                        background: "#fef2f2",
+                        border: "1px solid #fee2e2",
+                        padding: "0.2rem 0.4rem",
+                        borderRadius: "8px",
+                        animation: "fadeIn 0.15s ease",
+                      }}
+                    >
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.1rem" }}>Excluir?</span>
+                      <button
+                        className="icon-button"
                         style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          justifyContent: "flex-end",
+                          ...actionBtnDangerStyle,
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "6px",
+                          border: "none",
+                          background: "#ef4444",
+                          color: "#ffffff",
                         }}
+                        onClick={() => handleDelete(user.id)}
+                        disabled={deletingId === user.id}
+                        type="button"
+                        aria-label="Confirmar exclusão"
+                        data-tooltip="Confirmar"
                       >
-                        <button
-                          className="icon-button"
-                          style={actionBtnStyle}
-                          onClick={() => openEdit(user)}
-                          type="button"
-                          aria-label={`Editar ${user.name}`}
-                        >
-                          <Edit2 size={14} aria-hidden="true" />
-                        </button>
-                        {confirmDeleteId === user.id ? (
-                          <div
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "0.35rem",
-                              background: "#fef2f2",
-                              border: "1px solid #fee2e2",
-                              padding: "0.25rem 0.5rem",
-                              borderRadius: "10px",
-                              animation: "fadeIn 0.15s ease",
-                            }}
-                          >
-                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.15rem" }}>
-                              Excluir?
-                            </span>
-                            <button
-                              className="icon-button"
-                              style={{
-                                ...actionBtnDangerStyle,
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#ef4444",
-                                color: "#ffffff",
-                              }}
-                              onClick={() => handleDelete(user.id)}
-                              disabled={deletingId === user.id}
-                              type="button"
-                              aria-label="Confirmar exclusão"
-                            >
-                              {deletingId === user.id ? (
-                                <Loader2 size={12} className="spinner" />
-                              ) : (
-                                <Trash2 size={12} />
-                              )}
-                            </button>
-                            <button
-                              className="icon-button"
-                              style={{
-                                ...actionBtnStyle,
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#e2e8f0",
-                                color: "#475569",
-                              }}
-                              onClick={() => setConfirmDeleteId(null)}
-                              type="button"
-                              aria-label="Cancelar exclusão"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            className="icon-button"
-                            style={actionBtnDangerStyle}
-                            onClick={() => setConfirmDeleteId(user.id)}
-                            type="button"
-                            aria-label={`Excluir ${user.name}`}
-                          >
-                            <Trash2 size={14} aria-hidden="true" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        {deletingId === user.id ? <Loader2 size={10} className="spinner" /> : <Trash2 size={10} />}
+                      </button>
+                      <button
+                        className="icon-button"
+                        style={{
+                          ...actionBtnStyle,
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "6px",
+                          border: "none",
+                          background: "#e2e8f0",
+                          color: "#475569",
+                        }}
+                        onClick={() => setConfirmDeleteId(null)}
+                        type="button"
+                        aria-label="Cancelar exclusão"
+                        data-tooltip="Cancelar"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="icon-button"
+                      style={actionBtnDangerStyle}
+                      onClick={() => setConfirmDeleteId(user.id)}
+                      type="button"
+                      aria-label={`Excluir ${user.name}`}
+                      data-tooltip="Excluir"
+                    >
+                      <Trash2 size={14} aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
