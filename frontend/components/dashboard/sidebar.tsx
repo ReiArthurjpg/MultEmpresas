@@ -44,7 +44,6 @@ const NAV_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; ro
   { tab: "companies", label: "Empresas", icon: Building2, roles: ["MASTER"] },
   { tab: "plans", label: "Planos", icon: Award, roles: ["MASTER"] },
   { tab: "audit", label: "Auditoria", icon: Activity, roles: ["MASTER", "ADMIN"] },
-  { tab: "2fa", label: "Segurança 2FA", icon: Shield },
 ];
 
 export function Sidebar({
@@ -278,35 +277,7 @@ export function Sidebar({
               Meu Perfil
             </button>
 
-            {/* Configurações 2FA */}
-            <button
-              type="button"
-              role="menuitem"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.65rem",
-                width: "100%",
-                padding: "0.75rem 1rem",
-                background: "transparent",
-                border: "none",
-                color: "#e2e8f0",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "background 0.15s",
-                textAlign: "left",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              onClick={() => {
-                onTabChange("2fa");
-                setDropdownOpen(false);
-              }}
-            >
-              <Settings size={16} aria-hidden="true" />
-              Configurações
-            </button>
+
 
             {/* Divider */}
             <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "0.25rem 0" }} />
