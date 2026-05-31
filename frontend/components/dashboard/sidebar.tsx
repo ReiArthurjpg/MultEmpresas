@@ -43,7 +43,6 @@ const NAV_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; ro
   { tab: "company", label: "Minha Empresa", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
   { tab: "companies", label: "Empresas", icon: Building2, roles: ["MASTER"] },
   { tab: "plans", label: "Planos", icon: Award, roles: ["MASTER"] },
-  { tab: "audit", label: "Auditoria", icon: Activity, roles: ["MASTER", "ADMIN"] },
 ];
 
 export function Sidebar({

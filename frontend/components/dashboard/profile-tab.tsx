@@ -612,7 +612,42 @@ export function ProfileTab({
 
       {/* Main content split grid */}
       <div className="overview-content-grid" style={styles.contentGrid}>
-        {/* Left Column: Security Info Card (Plan Card Style) */}
+        {/* First Column: User Details Panel (Sessão) */}
+        <aside style={styles.panel} aria-labelledby="profile-details-title">
+          <span style={styles.sectionKicker}>Sessão</span>
+          <h3 id="profile-details-title" style={styles.sectionTitle}>
+            Detalhes do perfil
+          </h3>
+
+          <div style={styles.infoList} role="list">
+            {profileDetails.map(({ icon: Icon, label, value, tone }) => {
+              const toneStyle = TONE_STYLES[tone];
+              return (
+                <article key={label} style={styles.infoItem} role="listitem">
+                  <div
+                    style={{
+                      ...styles.iconBox,
+                      background: toneStyle.bg,
+                      color: toneStyle.color,
+                    }}
+                    aria-hidden="true"
+                  >
+                    <Icon size={20} />
+                  </div>
+                  <div style={styles.infoContent}>
+                    <span style={styles.infoLabel}>{label}</span>
+                    <strong style={styles.infoValue} title={value}>
+                      {value}
+                    </strong>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+        </aside>
+
+        {/* Second Column: Security Info Card */}
         <section
           style={{
             position: "relative",
@@ -777,41 +812,6 @@ export function ProfileTab({
           </div>
         </section>
 
-        {/* Right Column: User Details Panel */}
-        <aside style={styles.panel} aria-labelledby="profile-details-title">
-          <span style={styles.sectionKicker}>Sessão</span>
-          <h3 id="profile-details-title" style={styles.sectionTitle}>
-            Detalhes do perfil
-          </h3>
-
-          <div style={styles.infoList} role="list">
-            {profileDetails.map(({ icon: Icon, label, value, tone }) => {
-              const toneStyle = TONE_STYLES[tone];
-              return (
-                <article key={label} style={styles.infoItem} role="listitem">
-                  <div
-                    style={{
-                      ...styles.iconBox,
-                      background: toneStyle.bg,
-                      color: toneStyle.color,
-                    }}
-                    aria-hidden="true"
-                  >
-                    <Icon size={20} />
-                  </div>
-                  <div style={styles.infoContent}>
-                    <span style={styles.infoLabel}>{label}</span>
-                    <strong style={styles.infoValue} title={value}>
-                      {value}
-                    </strong>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-
-        </aside>
-
         {/* Right Column: 2FA Card (Plan Card Style) */}
         <section
           style={{
@@ -942,6 +942,143 @@ export function ProfileTab({
           </div>
         </section>
       </div>
+
+      {/* Auditoria Card (Visible for MASTER and ADMIN) */}
+      {["MASTER", "ADMIN"].includes(user.role) && (
+        <section
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            padding: "1.5rem",
+            border: "1px solid #eef2f6",
+            borderRadius: "22px",
+            background: "#ffffff",
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.03)",
+            transition: "all 0.2s ease",
+            marginTop: "1.25rem",
+          }}
+            className="table-row-hover"
+            aria-labelledby="audit-card-title"
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+              <div>
+                <h4 id="audit-card-title" style={{ margin: 0, fontWeight: 800, color: "#0f172a", fontSize: "1.25rem" }}>
+                  Auditoria
+                </h4>
+                <strong
+                  style={{
+                    fontSize: "2.2rem",
+                    fontWeight: 850,
+                    color: "#0f172a",
+                    letterSpacing: "-0.04em",
+                    marginTop: "0.5rem",
+                    display: "block",
+                  }}
+                >
+                  Logs
+                </strong>
+              </div>
+              <div>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0.32rem 0.65rem",
+                    borderRadius: "999px",
+                    fontSize: "0.72rem",
+                    fontWeight: 850,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    background: "rgba(15, 23, 42, 0.06)",
+                    border: "1px solid rgba(15, 23, 42, 0.1)",
+                    color: "#475569",
+                  }}
+                >
+                  Rastreabilidade
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "1rem", marginBottom: "1rem" }}>
+              <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem", lineHeight: "1.4" }}>
+                Acompanhe o histórico de acessos, alterações e ações executadas por todos os usuários do sistema em tempo real.
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.35rem",
+                  marginTop: "0.75rem",
+                  paddingTop: "0.75rem",
+                  borderTop: "1px solid #f1f5f9",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.68rem",
+                    fontWeight: 800,
+                    color: "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginBottom: "0.15rem",
+                  }}
+                >
+                  Recursos Monitorados:
+                </span>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
+                  <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
+                  <span>Tentativas e logs de Login</span>
+                </div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
+                  <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
+                  <span>Criação e edição de usuários</span>
+                </div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
+                  <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
+                  <span>Alterações em planos e empresas</span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderTop: "1px solid #f1f5f9",
+                paddingTop: "1rem",
+                marginTop: "auto",
+                gap: "0.5rem",
+              }}
+            >
+              <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 700 }}>
+                Logs do Sistema
+              </span>
+              <button
+                type="button"
+                className="secondary-button"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  padding: "0.45rem 0.85rem",
+                  borderRadius: "10px",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+                onClick={() => onNavigate("audit")}
+              >
+                <Activity size={13} aria-hidden="true" />
+                Visualizar Logs
+              </button>
+            </div>
+          </section>
+        )}
 
       {/* Modern Dialog/Modal Overlay */}
       {isModalOpen && (
