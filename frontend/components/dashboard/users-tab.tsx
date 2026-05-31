@@ -1229,7 +1229,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           <div style={styles.modal}>
             <div style={styles.modalHeader}>
               <h3 id="modal-title" style={styles.modalTitle}>
-                {modalMode === "create" ? "✨ Novo Usuário" : "✍️ Editar Usuário"}
+                {modalMode === "create" ? " Novo Usuário" : " Editar Usuário"}
               </h3>
               <button
                 className="icon-button"

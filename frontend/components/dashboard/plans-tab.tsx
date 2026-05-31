@@ -1056,15 +1056,22 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                     Recursos Inclusos:
                   </span>
                   {plan.permissions && plan.permissions.length > 0 ? (
-                    plan.permissions.map((perm) => {
-                      const pInfo = PERMISSIONS.find((p) => p.id === perm);
-                      return (
-                        <div key={perm} style={styles.permissionLine} title={pInfo?.label}>
-                          <span style={{ color: "#7c3aed", fontSize: "0.85rem" }}>✓</span>
-                          <span>{pInfo?.label || perm}</span>
+                    <>
+                      {plan.permissions.slice(0, 4).map((perm) => {
+                        const pInfo = PERMISSIONS.find((p) => p.id === perm);
+                        return (
+                          <div key={perm} style={styles.permissionLine} title={pInfo?.label}>
+                            <span style={{ color: "#7c3aed", fontSize: "0.85rem" }}>✓</span>
+                            <span>{pInfo?.label || perm}</span>
+                          </div>
+                        );
+                      })}
+                      {plan.permissions.length > 4 && (
+                        <div style={{ ...styles.permissionLine, color: "#7c3aed", fontWeight: 800, marginTop: "0.25rem" }}>
+                          <span>+ {plan.permissions.length - 4} outros recursos inclusos</span>
                         </div>
-                      );
-                    })
+                      )}
+                    </>
                   ) : (
                     <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
                       Nenhum recurso específico
@@ -1193,23 +1200,46 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                       </span>
                     )}
                   </td>
-                  <td style={styles.td}>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
+                  <td style={{ ...styles.td, maxWidth: "450px" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
                       {plan.permissions && plan.permissions.length > 0 ? (
-                        plan.permissions.map((perm) => (
-                          <span
-                            key={perm}
-                            style={{
-                              ...badgeBaseStyle,
-                              ...PILL_STYLES.permission,
-                              fontSize: "0.68rem",
-                              padding: "0.125rem 0.375rem",
-                            }}
-                            title={PERMISSIONS.find((p) => p.id === perm)?.label}
-                          >
-                            {PERMISSIONS.find((p) => p.id === perm)?.label || perm}
-                          </span>
-                        ))
+                        <>
+                          {plan.permissions.slice(0, 4).map((perm) => (
+                            <span
+                              key={perm}
+                              style={{
+                                ...badgeBaseStyle,
+                                ...PILL_STYLES.permission,
+                                fontSize: "0.72rem",
+                                padding: "0.2rem 0.6rem",
+                                borderRadius: "8px",
+                                background: "rgba(124, 58, 237, 0.05)",
+                                border: "1px solid rgba(124, 58, 237, 0.12)",
+                                color: "#6d28d9",
+                              }}
+                              title={PERMISSIONS.find((p) => p.id === perm)?.label}
+                            >
+                              {PERMISSIONS.find((p) => p.id === perm)?.label || perm}
+                            </span>
+                          ))}
+                          {plan.permissions.length > 4 && (
+                            <span
+                              style={{
+                                ...badgeBaseStyle,
+                                fontSize: "0.72rem",
+                                padding: "0.2rem 0.6rem",
+                                borderRadius: "8px",
+                                background: "#ede9fe",
+                                border: "1px solid rgba(124, 58, 237, 0.2)",
+                                color: "#7c3aed",
+                                fontWeight: 800,
+                              }}
+                              title={plan.permissions.slice(4).map(perm => PERMISSIONS.find((p) => p.id === perm)?.label || perm).join(", ")}
+                            >
+                              +{plan.permissions.length - 4} acessos
+                            </span>
+                          )}
+                        </>
                       ) : (
                         <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
                           Nenhuma

@@ -1292,7 +1292,7 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
           <div style={styles.modal}>
             <div style={styles.modalHeader}>
               <h3 id="modal-title" style={styles.modalTitle}>
-                {modalMode === "create" ? "✨ Nova Empresa" : "✍️ Editar Empresa"}
+                {modalMode === "create" ? " Nova Empresa" : " Editar Empresa"}
               </h3>
               <button
                 className="icon-button"
