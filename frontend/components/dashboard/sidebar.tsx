@@ -234,9 +234,12 @@ export function Sidebar({
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "0.15rem",
-                  paddingLeft: "0.75rem",
-                  overflow: "hidden",
+                  gap: "0.25rem",
+                  marginLeft: "1.25rem",
+                  paddingLeft: "0.85rem",
+                  marginTop: "0.25rem",
+                  marginBottom: "0.5rem",
+                  borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
                   animation: "dropdownFadeIn 0.18s ease",
                 }}
               >
@@ -248,14 +251,22 @@ export function Sidebar({
                       "db-sidebar__item",
                       activeTab === tab && "db-sidebar__item--active"
                     )}
-                    style={{ fontSize: "0.85rem", paddingTop: "0.5rem", paddingBottom: "0.5rem" }}
+                    style={{ 
+                      fontSize: "0.825rem", 
+                      paddingTop: "0.45rem", 
+                      paddingBottom: "0.45rem",
+                      paddingLeft: "0.75rem",
+                      height: "34px",
+                      borderRadius: "6px",
+                      opacity: activeTab === tab ? 1 : 0.8,
+                    }}
                     onClick={() => {
                       onTabChange(tab);
                       setCadastroOpen(true);
                     }}
                     aria-current={activeTab === tab ? "page" : undefined}
                   >
-                    <Icon size={17} aria-hidden="true" />
+                    <Icon size={15} aria-hidden="true" style={{ opacity: 0.9 }} />
                     <span>{label}</span>
                   </button>
                 ))}
