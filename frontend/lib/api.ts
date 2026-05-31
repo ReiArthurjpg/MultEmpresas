@@ -82,6 +82,68 @@ export type UpdateUserPayload = Partial<
 // ---------------------------------------------------------------------------
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8010").replace(/\/$/, "");
+
+// ---------------------------------------------------------------------------
+// Session-expiry handler (SweetAlert2 countdown + auto-logout)
+// ---------------------------------------------------------------------------
+
+export let _sessionExpiryShowing = false;
+
+export async function handleSessionExpiry(): Promise<void> {
+  if (_sessionExpiryShowing) return;
+  _sessionExpiryShowing = true;
+
+  if (typeof window === "undefined") return;
+
+  // Dynamic import so we don't ship swal to SSR bundles
+  const Swal = (await import("sweetalert2")).default;
+
+  const COUNTDOWN = 8;
+  let remaining = COUNTDOWN;
+
+  const dialog = Swal.fire({
+    icon: "warning",
+    title: "Sessão expirada",
+    html: `Sua sessão expirou. Você será redirecionado para o login em <strong>${remaining}</strong> segundo(s).`,
+    timerProgressBar: true,
+    timer: COUNTDOWN * 1000,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Sair agora",
+    confirmButtonColor: "#2563eb",
+    background: "#ffffff",
+    customClass: {
+      popup: "swal2-multempresas",
+    },
+    didOpen: () => {
+      const interval = setInterval(() => {
+        remaining -= 1;
+        const htmlEl = Swal.getHtmlContainer();
+        if (htmlEl) {
+          htmlEl.innerHTML = `Sua sessão expirou. Você será redirecionado para o login em <strong>${remaining}</strong> segundo(s).`;
+        }
+        if (remaining <= 0) clearInterval(interval);
+      }, 1000);
+    },
+  });
+
+  await dialog;
+
+  clearSession();
+  window.location.replace("/");
+}
+
+export function getJwtExpiry(token: string): number | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload.exp ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 const SESSION_KEY = "multempresas.session";
 const SESSION_ONLY_KEY = "multempresas.session-only";
 
@@ -100,7 +162,19 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const data = (await response.json().catch(() => ({}))) as T & { error?: string };
 
   if (!response.ok) {
-    throw new Error(data.error ?? "Não foi possível concluir a requisição.");
+    const errorMsg = data.error ?? "Não foi possível concluir a requisição.";
+
+    // Detect JWT expiry / unauthorised — trigger sweet-alert logout flow
+    const isAuthError =
+      response.status === 401 ||
+      /token.*expirado|jwt.*invalid|token.*inválido|token.*bearer/i.test(errorMsg);
+
+    if (isAuthError) {
+      handleSessionExpiry();
+      throw new Error("Sessão expirada.");
+    }
+
+    throw new Error(errorMsg);
   }
 
   return data;

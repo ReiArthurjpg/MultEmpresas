@@ -6,6 +6,8 @@ import {
   clearSession,
   getSession,
   logout,
+  getJwtExpiry,
+  handleSessionExpiry,
   type Session,
 } from "@/lib/api";
 import { Sidebar, type DashboardTab } from "@/components/dashboard/sidebar";
@@ -35,6 +37,20 @@ export default function DashboardPage() {
     }
     setSession(currentSession);
     setTwoFactorEnabled(currentSession.user.two_factor_enabled ?? false);
+
+    // Setup background token expiration check
+    const expiry = getJwtExpiry(currentSession.accessToken);
+    if (expiry) {
+      const remaining = expiry - Date.now();
+      if (remaining <= 0) {
+        handleSessionExpiry();
+      } else {
+        const timer = setTimeout(() => {
+          handleSessionExpiry();
+        }, remaining);
+        return () => clearTimeout(timer);
+      }
+    }
   }, [router]);
 
   async function handleLogout() {

@@ -644,11 +644,11 @@ export function AuditTab({ accessToken }: AuditTabProps) {
                       <User size={14} />
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <h4 style={{ ...styles.cardTitle, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={log.user_name}>
+                      <h4 style={{ ...styles.cardTitle, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={log.user_name ?? undefined}>
                         {log.user_name || "Sistema"}
                       </h4>
                       {log.user_email && (
-                        <span style={{ fontSize: "0.78rem", color: "#64748b", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={log.user_email}>
+                        <span style={{ fontSize: "0.78rem", color: "#64748b", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={log.user_email ?? undefined}>
                           {log.user_email}
                         </span>
                       )}

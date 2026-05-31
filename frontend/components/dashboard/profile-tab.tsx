@@ -1209,7 +1209,7 @@ export function ProfileTab({
                   disabled={
                     loading ||
                     // Disable if they typed in password fields but validation failed
-                    ( (currentPassword || newPassword || confirmPassword) &&
+                    ( !!(currentPassword || newPassword || confirmPassword) &&
                       (!currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 8) )
                   }
                 >
