@@ -1211,8 +1211,6 @@ a {
   .db-sidebar__user-info,
   .db-sidebar__item span { display: none; }
   .db-sidebar__item { justify-content: center; padding: 0.625rem; }
-  .db-sidebar__logout span { display: none; }
-  .db-sidebar__logout { justify-content: center; padding: 0.5rem; }
   .db-sidebar__header { justify-content: center; }
   .db-sidebar__toggle { display: none; }
   .db-sidebar__user { justify-content: center; }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import type { CSSProperties } from "react";
 import {
   AlertTriangle,
@@ -337,6 +338,24 @@ const PILL_STYLES: Record<string, CSSProperties> = {
 
 export function OverviewTab({ session, onNavigate }: OverviewTabProps) {
   const { user, company } = session;
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(`multempresas.profile_image_${user.email}`);
+    if (stored) {
+      setProfileImage(stored);
+    }
+
+    function handleCustomEvent() {
+      const storedVal = localStorage.getItem(`multempresas.profile_image_${user.email}`);
+      setProfileImage(storedVal);
+    }
+
+    window.addEventListener("profile-image-updated", handleCustomEvent);
+    return () => {
+      window.removeEventListener("profile-image-updated", handleCustomEvent);
+    };
+  }, [user.email]);
 
   const now = new Date();
   const greeting =
@@ -472,8 +491,12 @@ export function OverviewTab({ session, onNavigate }: OverviewTabProps) {
               Conta {accountStatus}
             </span>
             <div style={styles.identity} aria-label="Usuário logado">
-              <div style={styles.avatar} aria-hidden="true">
-                {userFirstName.charAt(0).toUpperCase()}
+              <div style={{ ...styles.avatar, overflow: "hidden" }} aria-hidden="true">
+                {profileImage ? (
+                  <img src={profileImage} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  userFirstName.charAt(0).toUpperCase()
+                )}
               </div>
               <div>
                 <strong style={styles.identityName}>{user.name}</strong>

@@ -62,6 +62,24 @@ export function Sidebar({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(`multempresas.profile_image_${session.user.email}`);
+    if (stored) {
+      setProfileImage(stored);
+    }
+
+    function handleCustomEvent() {
+      const storedVal = localStorage.getItem(`multempresas.profile_image_${session.user.email}`);
+      setProfileImage(storedVal);
+    }
+
+    window.addEventListener("profile-image-updated", handleCustomEvent);
+    return () => {
+      window.removeEventListener("profile-image-updated", handleCustomEvent);
+    };
+  }, [session.user.email]);
 
   const role = session.user.role;
 
@@ -365,8 +383,12 @@ export function Sidebar({
             }
           }}
         >
-          <div className="db-sidebar__avatar" aria-hidden="true" style={{ flexShrink: 0 }}>
-            {initials}
+          <div className="db-sidebar__avatar" aria-hidden="true" style={{ flexShrink: 0, overflow: "hidden" }}>
+            {profileImage ? (
+              <img src={profileImage} alt={session.user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              initials
+            )}
           </div>
 
           {!isVisualCollapsed && (

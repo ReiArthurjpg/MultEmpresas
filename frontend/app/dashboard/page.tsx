@@ -169,7 +169,7 @@ export default function DashboardPage() {
           )}
 
           {activeTab === "profile" && (
-            <ProfileTab session={session} onPasswordChanged={handlePasswordChanged} />
+            <ProfileTab session={session} onPasswordChanged={handlePasswordChanged} onNavigate={setActiveTab} />
           )}
         </div>
       </main>
