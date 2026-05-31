@@ -67,9 +67,12 @@ export function TwoFATab({ accessToken, twoFactorEnabled, onStatusChange }: TwoF
     setCodeError(null);
     setApiError(null);
     try {
-      await verify2FA(accessToken, code);
-      setPhase("verify");
-      // After verify, enable
+      const verifyResult = await verify2FA(accessToken, code);
+      if (!verifyResult.valid) {
+        setApiError("Código TOTP inválido. Tente novamente.");
+        return;
+      }
+      // Code is valid — now persist 2FA activation
       await enable2FA(accessToken, code);
       setSuccessMsg("2FA habilitado com sucesso!");
       setPhase("done");

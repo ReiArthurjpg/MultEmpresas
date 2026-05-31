@@ -187,7 +187,7 @@ export async function setup2FA(accessToken: string) {
 
 /** POST /auth/2fa/verify — Valida o código TOTP informado pelo usuário */
 export async function verify2FA(accessToken: string, totpCode: string) {
-  return request<{ message: string }>("/auth/2fa/verify", {
+  return request<{ valid: boolean }>("/auth/2fa/verify", {
     method: "POST",
     headers: authHeaders(accessToken),
     body: JSON.stringify({ totp_code: totpCode }),

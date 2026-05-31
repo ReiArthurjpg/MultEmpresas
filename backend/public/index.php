@@ -67,11 +67,11 @@ $router->add('POST', '/auth/2fa/setup', function () use (&$actor, $users, $totp)
 });
 $router->add('POST', '/auth/2fa/verify', function () use (&$actor, $users, $totp, $input) {
     $user = $users->byEmail((string) $users->find((int) $actor['user_id'], ['role' => 'MASTER'])['email']);
-    return ['valid' => $totp->verify((string) $user['two_factor_secret'], (string) ($input()['code'] ?? ''))];
+    return ['valid' => $totp->verify((string) $user['two_factor_secret'], (string) ($input()['totp_code'] ?? ''))];
 });
 $router->add('POST', '/auth/2fa/enable', function () use (&$actor, $users, $totp, $input) {
     $user = $users->byEmail((string) $users->find((int) $actor['user_id'], ['role' => 'MASTER'])['email']);
-    if (!$totp->verify((string) $user['two_factor_secret'], (string) ($input()['code'] ?? ''))) { throw new RuntimeException('Código TOTP inválido.'); }
+    if (!$totp->verify((string) $user['two_factor_secret'], (string) ($input()['totp_code'] ?? ''))) { throw new RuntimeException('Código TOTP inválido.'); }
     $users->save((int) $actor['user_id'], ['two_factor_enabled' => 1]);
     return ['message' => '2FA habilitado.'];
 });
