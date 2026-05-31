@@ -531,7 +531,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "1.25rem",
-    maxHeight: "calc(100vh - 13rem)",
+    maxHeight: "calc(100vh - 15.5rem)",
     overflowY: "auto",
     padding: "1.75rem",
   },
@@ -540,7 +540,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "flex-end",
     gap: "0.75rem",
-    padding: "1.25rem 1.75rem",
+    padding: "1.5rem 1.75rem",
     borderTop: "1px solid #f1f5f9",
     background: "#fafbfe",
   },
@@ -1313,7 +1313,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
           <div style={styles.modal}>
             <div style={styles.modalHeader}>
               <h3 id="modal-title" style={styles.modalTitle}>
-                {modalMode === "create" ? "✨ Novo Plano" : "✍️ Editar Plano"}
+                {modalMode === "create" ? "Novo Plano" : "Editar Plano"}
               </h3>
               <button
                 className="icon-button"
@@ -1337,7 +1337,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
               </button>
             </div>
 
-            <div style={{ ...styles.modalBody, maxHeight: "75vh", overflowY: "auto" }}>
+            <div style={styles.modalBody}>
               <div style={styles.fieldGroup}>
                 <label htmlFor="plan-name" style={styles.label}>Nome do plano</label>
                 <input
@@ -1406,10 +1406,10 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "0.75rem",
-                    background: "#fafbfe",
-                    padding: "1rem",
-                    borderRadius: "16px",
+                    gap: "1rem",
+                    background: "#f8fafc",
+                    padding: "1.25rem",
+                    borderRadius: "18px",
                     border: "1px solid #e2e8f0",
                   }}
                 >
@@ -1419,17 +1419,44 @@ export function PlansTab({ accessToken }: PlansTabProps) {
 
                       {group.permissions && (
                         <div style={styles.permissionGrid}>
-                          {group.permissions.map((perm) => (
-                            <label key={perm.id} style={styles.permissionOption}>
-                              <input
-                                type="checkbox"
-                                checked={form.permissions.includes(perm.id)}
-                                onChange={() => handlePermissionToggle(perm.id)}
-                                style={styles.permissionCheckbox}
-                              />
-                              <span style={styles.permissionOptionLabel}>{perm.label}</span>
-                            </label>
-                          ))}
+                          {group.permissions.map((perm) => {
+                            const isChecked = form.permissions.includes(perm.id);
+                            return (
+                              <label 
+                                key={perm.id} 
+                                style={{
+                                  ...styles.permissionOption,
+                                  background: isChecked ? "rgba(124, 58, 237, 0.04)" : "#ffffff",
+                                  border: isChecked ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid #e2e8f0",
+                                  padding: "0.6rem 0.8rem",
+                                  borderRadius: "10px",
+                                  transition: "all 0.2s ease",
+                                }}
+                              >
+                                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => handlePermissionToggle(perm.id)}
+                                    style={{
+                                      ...styles.permissionCheckbox,
+                                      accentColor: "#7c3aed",
+                                      width: "16px",
+                                      height: "16px",
+                                    }}
+                                  />
+                                </div>
+                                <span style={{
+                                  ...styles.permissionOptionLabel,
+                                  color: isChecked ? "#7c3aed" : "#334155",
+                                  fontSize: "0.8rem",
+                                  fontWeight: isChecked ? 800 : 600,
+                                }}>
+                                  {perm.label}
+                                </span>
+                              </label>
+                            );
+                          })}
                         </div>
                       )}
 
@@ -1437,17 +1464,44 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                         <div key={subgroup.title} style={styles.permissionSubgroup}>
                           <strong style={styles.permissionSubgroupTitle}>{subgroup.title}</strong>
                           <div style={styles.permissionGrid}>
-                            {subgroup.permissions.map((perm) => (
-                              <label key={perm.id} style={styles.permissionOption}>
-                                <input
-                                  type="checkbox"
-                                  checked={form.permissions.includes(perm.id)}
-                                  onChange={() => handlePermissionToggle(perm.id)}
-                                  style={styles.permissionCheckbox}
-                                />
-                                <span style={styles.permissionOptionLabel}>{perm.label}</span>
-                              </label>
-                            ))}
+                            {subgroup.permissions.map((perm) => {
+                              const isChecked = form.permissions.includes(perm.id);
+                              return (
+                                <label 
+                                  key={perm.id} 
+                                  style={{
+                                    ...styles.permissionOption,
+                                    background: isChecked ? "rgba(124, 58, 237, 0.04)" : "#ffffff",
+                                    border: isChecked ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid #e2e8f0",
+                                    padding: "0.6rem 0.8rem",
+                                    borderRadius: "10px",
+                                    transition: "all 0.2s ease",
+                                  }}
+                                >
+                                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => handlePermissionToggle(perm.id)}
+                                      style={{
+                                        ...styles.permissionCheckbox,
+                                        accentColor: "#7c3aed",
+                                        width: "16px",
+                                        height: "16px",
+                                      }}
+                                    />
+                                  </div>
+                                  <span style={{
+                                    ...styles.permissionOptionLabel,
+                                    color: isChecked ? "#7c3aed" : "#334155",
+                                    fontSize: "0.8rem",
+                                    fontWeight: isChecked ? 800 : 600,
+                                  }}>
+                                    {perm.label}
+                                  </span>
+                                </label>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
