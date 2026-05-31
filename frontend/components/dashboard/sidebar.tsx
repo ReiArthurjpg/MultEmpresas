@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Shield,
+  UserCircle,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,8 @@ export type DashboardTab =
   | "company"
   | "companies"
   | "plans"
-  | "audit";
+  | "audit"
+  | "profile";
 
 type SidebarProps = {
   session: Session;
@@ -41,6 +43,7 @@ const NAV_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; ro
   { tab: "plans", label: "Planos", icon: Award, roles: ["MASTER"] },
   { tab: "audit", label: "Auditoria", icon: Activity, roles: ["MASTER", "ADMIN"] },
   { tab: "2fa", label: "Segurança 2FA", icon: Shield },
+  { tab: "profile", label: "Meu Perfil", icon: UserCircle },
 ];
 
 export function Sidebar({

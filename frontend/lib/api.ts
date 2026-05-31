@@ -173,6 +173,15 @@ export async function refreshToken(refreshTokenValue: string) {
   });
 }
 
+/** POST /auth/change-password — Altera a senha do usuário autenticado */
+export async function changePassword(accessToken: string, currentPassword: string, newPassword: string) {
+  return request<{ message: string }>("/auth/change-password", {
+    method: "POST",
+    headers: authHeaders(accessToken),
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+}
+
 // ---------------------------------------------------------------------------
 // 2FA  (/auth/2fa/*)
 // ---------------------------------------------------------------------------

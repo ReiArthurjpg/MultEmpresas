@@ -15,9 +15,11 @@ import {
   Users,
 } from "lucide-react";
 import type { Session } from "@/lib/api";
+import type { DashboardTab } from "@/components/dashboard/sidebar";
 
 type OverviewTabProps = {
   session: Session;
+  onNavigate: (tab: DashboardTab) => void;
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -333,7 +335,7 @@ const PILL_STYLES: Record<string, CSSProperties> = {
   },
 };
 
-export function OverviewTab({ session }: OverviewTabProps) {
+export function OverviewTab({ session, onNavigate }: OverviewTabProps) {
   const { user, company } = session;
 
   const now = new Date();
@@ -632,7 +634,7 @@ export function OverviewTab({ session }: OverviewTabProps) {
                     política de segurança.
                   </span>
                 </div>
-                <button style={styles.actionButton} type="button">
+                <button style={styles.actionButton} type="button" onClick={() => onNavigate("profile")}>
                   Atualizar senha
                   <ArrowUpRight size={15} aria-hidden="true" />
                 </button>
@@ -669,7 +671,7 @@ export function OverviewTab({ session }: OverviewTabProps) {
                     conta e reduzir riscos de acesso indevido.
                   </span>
                 </div>
-                <button style={styles.actionButton} type="button">
+                <button style={styles.actionButton} type="button" onClick={() => onNavigate("2fa")}>
                   Ver segurança
                   <ArrowUpRight size={15} aria-hidden="true" />
                 </button>

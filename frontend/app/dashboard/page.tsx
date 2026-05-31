@@ -16,6 +16,7 @@ import { CompanyTab } from "@/components/dashboard/company-tab";
 import { CompaniesTab } from "@/components/dashboard/companies-tab";
 import { PlansTab } from "@/components/dashboard/plans-tab";
 import { AuditTab } from "@/components/dashboard/audit-tab";
+import { ProfileTab } from "@/components/dashboard/profile-tab";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -68,6 +69,20 @@ export default function DashboardPage() {
     }
   }
 
+  function handlePasswordChanged() {
+    if (session) {
+      const updated: Session = {
+        ...session,
+        user: { ...session.user, must_change_password: false },
+      };
+      setSession(updated);
+      import("@/lib/api").then(({ saveSession }) => {
+        const isPersistent = window.localStorage.getItem("multempresas.session") !== null;
+        saveSession(updated, isPersistent);
+      });
+    }
+  }
+
   // Loading state
   if (!session) {
     return (
@@ -101,7 +116,7 @@ export default function DashboardPage() {
         aria-label="Conteúdo principal"
       >
         <div className="db-main__inner">
-          {activeTab === "overview" && <OverviewTab session={session} />}
+          {activeTab === "overview" && <OverviewTab session={session} onNavigate={setActiveTab} />}
 
           {activeTab === "users" && canManageUsers && (
             <UsersTab accessToken={session.accessToken} />
@@ -151,6 +166,10 @@ export default function DashboardPage() {
             <div className="empty-state">
               <p>Você não tem permissão para acessar o log de auditoria.</p>
             </div>
+          )}
+
+          {activeTab === "profile" && (
+            <ProfileTab session={session} onPasswordChanged={handlePasswordChanged} />
           )}
         </div>
       </main>
