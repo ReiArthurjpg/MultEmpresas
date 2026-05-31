@@ -18,6 +18,20 @@ use App\Shared\Response;
 require __DIR__ . '/../bootstrap.php';
 Env::load(__DIR__ . '/../.env');
 
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigins = array_filter(array_map('trim', explode(',', (string) Env::get('FRONTEND_ORIGINS', 'http://localhost:3000'))));
+if ($origin !== '' && in_array($origin, $allowedOrigins, true)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Vary: Origin');
+}
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Max-Age: 86400');
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 $pdo = Connection::make();
 $jwt = new JwtService();
 $totp = new TotpService();
@@ -44,6 +58,23 @@ $router->add('POST', '/auth/logout', function () use (&$actor, $pdo, $audit, $ip
     $audit->write($actor['company_id'], $actor['user_id'], 'LOGOUT', 'users', $actor['user_id'], $ip(), $ua());
     return ['message' => 'Logout realizado.'];
 });
+$router->add('POST', '/auth/change-password', function () use (&$actor, $users, $audit, $input, $ip, $ua) {
+    $data = $input();
+    $currentPassword = (string) ($data['current_password'] ?? '');
+    $newPassword     = (string) ($data['new_password'] ?? '');
+    if (strlen($newPassword) < 8) { throw new RuntimeException('A nova senha deve ter pelo menos 8 caracteres.'); }
+    $emailUser = $users->find((int) $actor['user_id'], ['role' => 'MASTER']);
+    $user = $emailUser ? $users->byEmail((string) $emailUser['email']) : null;
+    if (!$user || !password_verify($currentPassword, (string) $user['password'])) {
+        throw new RuntimeException('Senha atual incorreta.');
+    }
+    $users->save((int) $actor['user_id'], [
+        'password'             => password_hash($newPassword, PASSWORD_ARGON2ID),
+        'must_change_password' => 0,
+    ]);
+    $audit->write($actor['company_id'], $actor['user_id'], 'CHANGE_PASSWORD', 'users', $actor['user_id'], $ip(), $ua());
+    return ['message' => 'Senha alterada com sucesso.'];
+});
 
 $router->add('POST', '/auth/2fa/setup', function () use (&$actor, $users, $totp) {
     $secret = $totp->secret();
@@ -53,11 +84,11 @@ $router->add('POST', '/auth/2fa/setup', function () use (&$actor, $users, $totp)
 });
 $router->add('POST', '/auth/2fa/verify', function () use (&$actor, $users, $totp, $input) {
     $user = $users->byEmail((string) $users->find((int) $actor['user_id'], ['role' => 'MASTER'])['email']);
-    return ['valid' => $totp->verify((string) $user['two_factor_secret'], (string) ($input()['code'] ?? ''))];
+    return ['valid' => $totp->verify((string) $user['two_factor_secret'], (string) ($input()['totp_code'] ?? ''))];
 });
 $router->add('POST', '/auth/2fa/enable', function () use (&$actor, $users, $totp, $input) {
     $user = $users->byEmail((string) $users->find((int) $actor['user_id'], ['role' => 'MASTER'])['email']);
-    if (!$totp->verify((string) $user['two_factor_secret'], (string) ($input()['code'] ?? ''))) { throw new RuntimeException('Código TOTP inválido.'); }
+    if (!$totp->verify((string) $user['two_factor_secret'], (string) ($input()['totp_code'] ?? ''))) { throw new RuntimeException('Código TOTP inválido.'); }
     $users->save((int) $actor['user_id'], ['two_factor_enabled' => 1]);
     return ['message' => '2FA habilitado.'];
 });

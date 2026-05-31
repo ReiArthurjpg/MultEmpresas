@@ -42,7 +42,15 @@ final class AuthService
         return [
             'access_token' => $this->jwt->issue($claims, (string) Env::get('ACCESS_TOKEN_EXPIRE', '15m')),
             'refresh_token' => $refresh,
-            'user' => ['id' => (int) $user['id'], 'name' => $user['name'], 'email' => $user['email'], 'role' => $user['role'], 'must_change_password' => (bool) $user['must_change_password']],
+            'user' => [
+                'id' => (int) $user['id'],
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'role' => $user['role'],
+                'must_change_password' => (bool) $user['must_change_password'],
+                'two_factor_enabled' => (bool) $user['two_factor_enabled'],
+                'active' => (bool) $user['active']
+            ],
             'company' => $user['company_id'] ? ['id' => (int) $user['company_id'], 'name' => $user['company_name'], 'logo_url' => $user['logo_url']] : null,
             'two_factor_setup_required' => $twoFactorSetupRequired ?? false,
         ];

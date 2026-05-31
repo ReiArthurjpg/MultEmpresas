@@ -8,14 +8,29 @@ final class PlanRepository extends BaseRepository
 {
     public function all(): array
     {
-        return $this->pdo->query('SELECT * FROM plans ORDER BY id DESC')->fetchAll();
+        $plans = $this->pdo->query('SELECT * FROM plans ORDER BY id DESC')->fetchAll();
+        foreach ($plans as &$plan) {
+            $plan['permissions'] = $this->getPermissions((int) $plan['id']);
+        }
+        return $plans;
     }
 
     public function find(int $id): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM plans WHERE id = :id');
         $stmt->execute(['id' => $id]);
-        return $stmt->fetch() ?: null;
+        $plan = $stmt->fetch() ?: null;
+        if ($plan) {
+            $plan['permissions'] = $this->getPermissions($id);
+        }
+        return $plan;
+    }
+
+    private function getPermissions(int $planId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT permission FROM plan_permissions WHERE plan_id = :id');
+        $stmt->execute(['id' => $planId]);
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [];
     }
 
     public function create(array $data): int
