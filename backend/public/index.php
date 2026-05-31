@@ -63,7 +63,8 @@ $router->add('POST', '/auth/change-password', function () use (&$actor, $users, 
     $currentPassword = (string) ($data['current_password'] ?? '');
     $newPassword     = (string) ($data['new_password'] ?? '');
     if (strlen($newPassword) < 8) { throw new RuntimeException('A nova senha deve ter pelo menos 8 caracteres.'); }
-    $user = $users->find((int) $actor['user_id'], $actor);
+    $emailUser = $users->find((int) $actor['user_id'], ['role' => 'MASTER']);
+    $user = $emailUser ? $users->byEmail((string) $emailUser['email']) : null;
     if (!$user || !password_verify($currentPassword, (string) $user['password'])) {
         throw new RuntimeException('Senha atual incorreta.');
     }
