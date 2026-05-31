@@ -18,8 +18,10 @@ import {
   deleteUser,
   listUsers,
   updateUser,
+  listCompanies,
   type CreateUserPayload,
   type User,
+  type Company,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +42,7 @@ type UserForm = {
   email: string;
   password: string;
   role: User["role"];
+  company_id: string; // Keep as string for select elements
   must_change_password: boolean;
 };
 
@@ -48,6 +51,7 @@ const EMPTY_FORM: UserForm = {
   email: "",
   password: "",
   role: "OPERATOR",
+  company_id: "",
   must_change_password: true,
 };
 
@@ -461,6 +465,7 @@ function normalizeUsersResponse(raw: unknown): User[] {
 
 export function UsersTab({ accessToken }: UsersTabProps) {
   const [users, setUsers] = useState<User[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -489,9 +494,21 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     }
   }, [accessToken]);
 
+  const fetchCompanies = useCallback(async () => {
+    try {
+      const res = await listCompanies(accessToken);
+      if (res && res.data) {
+        setCompanies(res.data);
+      }
+    } catch (err) {
+      console.warn("[UsersTab] Erro ao carregar empresas para dropdown:", err);
+    }
+  }, [accessToken]);
+
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchCompanies();
+  }, [fetchUsers, fetchCompanies]);
 
   useEffect(() => {
     if (modalMode) {
@@ -512,6 +529,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       email: user.email,
       password: "",
       role: user.role,
+      company_id: user.company_id ? String(user.company_id) : "",
       must_change_password: user.must_change_password,
     });
     setFormError(null);
@@ -548,12 +566,14 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     setFormError(null);
 
     try {
+      const companyIdNum = form.company_id ? Number(form.company_id) : null;
       if (modalMode === "create") {
         const payload: CreateUserPayload = {
           name: form.name,
           email: form.email,
           password: form.password,
           role: form.role,
+          company_id: companyIdNum,
           must_change_password: form.must_change_password,
         };
         await createUser(accessToken, payload);
@@ -562,6 +582,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           name: form.name,
           email: form.email,
           role: form.role,
+          company_id: companyIdNum,
           must_change_password: form.must_change_password,
         };
         if (form.password) payload.password = form.password;
@@ -929,6 +950,18 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                     >
                       2FA: {user.two_factor_enabled ? "ON" : "OFF"}
                     </span>
+                    <span
+                      style={{
+                        ...badgeBaseStyle,
+                        background: "rgba(148, 163, 184, 0.08)",
+                        border: "1px solid rgba(148, 163, 184, 0.18)",
+                        color: "#475569",
+                        fontSize: "0.65rem",
+                        padding: "0.15rem 0.45rem",
+                      }}
+                    >
+                      🏢 {user.company_name || "Sem empresa"}
+                    </span>
                   </div>
 
                   {user.must_change_password && (
@@ -1033,6 +1066,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
             <thead>
               <tr>
                 <th scope="col" style={styles.th}>Nome</th>
+                <th scope="col" style={styles.th}>Empresa</th>
                 <th scope="col" style={styles.th}>E-mail</th>
                 <th scope="col" style={styles.th}>Perfil</th>
                 <th scope="col" style={styles.th}>Status</th>
@@ -1066,6 +1100,9 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                           )}
                         </div>
                       </div>
+                    </td>
+                    <td style={{ ...styles.td, color: "#475569", fontWeight: 700 }}>
+                      🏢 {user.company_name || <span style={{ color: "#94a3b8", fontStyle: "italic", fontWeight: 500 }}>Sem empresa</span>}
                     </td>
                     <td style={{ ...styles.td, color: "#64748b", fontWeight: 500 }}>{user.email}</td>
                     <td style={styles.td}>
@@ -1314,6 +1351,31 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                   <option value="OPERATOR">Operador</option>
                   <option value="ADMIN">Administrador</option>
                   <option value="MASTER">Master</option>
+                </select>
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="user-company" style={styles.label}>Empresa vinculada</label>
+                <select
+                  id="user-company"
+                  style={{
+                    ...styles.input,
+                    appearance: "none",
+                    backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 1rem center",
+                    backgroundSize: "1.2rem",
+                    paddingRight: "2.5rem",
+                  }}
+                  value={form.company_id}
+                  onChange={(e) => updateField("company_id", e.target.value)}
+                >
+                  <option value="">Sem empresa (Vínculo Master/Geral)</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={String(company.id)}>
+                      {company.company_name} {company.trade_name ? `(${company.trade_name})` : ""}
+                    </option>
+                  ))}
                 </select>
               </div>
 
