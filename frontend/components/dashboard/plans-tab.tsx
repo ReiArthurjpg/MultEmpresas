@@ -220,11 +220,11 @@ const styles = {
   },
   hero: {
     position: "relative",
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 320px)",
-    gap: "1.5rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
     overflow: "hidden",
-    padding: "2rem",
+    padding: "1.5rem",
     border: "1px solid rgba(124, 58, 237, 0.16)",
     borderRadius: "28px",
     background:
@@ -237,8 +237,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: "1.25rem",
-    minHeight: "160px",
+    gap: "1rem",
+    minHeight: "0",
   },
   eyebrow: {
     display: "inline-flex",
@@ -312,6 +312,52 @@ const styles = {
     alignItems: "center",
     gap: "0.75rem",
     marginTop: "0.5rem",
+  },
+  filterPanel: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    marginBottom: "0",
+  },
+  filterField: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+  },
+  filterLabel: {
+    color: "#475569",
+    fontSize: "0.72rem",
+    fontWeight: 700,
+  },
+  filterInput: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  filterSelect: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  toolbarRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "0",
+  },
+  toolbarActions: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.75rem",
   },
   // Table Styling
   tableContainer: {
@@ -667,6 +713,8 @@ export function PlansTab({ accessToken }: PlansTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
@@ -789,6 +837,18 @@ export function PlansTab({ accessToken }: PlansTabProps) {
     }
   }
 
+  const filteredPlans = plans.filter((p) => {
+    const search = searchTerm.trim().toLowerCase();
+    const searchMatch =
+      !search ||
+      p.name.toLowerCase().includes(search) ||
+      p.description?.toLowerCase().includes(search);
+    const statusMatch =
+      statusFilter === "all" ||
+      (statusFilter === "active" ? p.active : !p.active);
+    return searchMatch && statusMatch;
+  });
+
   return (
     <section
       className="tab-section overview-dashboard"
@@ -814,17 +874,39 @@ export function PlansTab({ accessToken }: PlansTabProps) {
       {/* Header */}
       <div className="overview-hero-card" style={styles.hero}>
         <div style={styles.heroContent}>
-          <div style={styles.eyebrow}>
-            <Award size={14} aria-hidden="true" />
-            Precificação & Licenciamento
+          <h2 id="plans-tab-title" className="sr-only">
+            Planos
+          </h2>
+        </div>
+
+        <div style={styles.filterPanel}>
+          <div style={styles.filterField}>
+            <label htmlFor="plan-search" style={styles.filterLabel}>
+              Buscar
+            </label>
+            <input
+              id="plan-search"
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Nome ou descrição"
+              style={styles.filterInput}
+            />
           </div>
-          <div>
-            <h2 id="plans-tab-title" style={styles.title}>
-              Planos
-            </h2>
-            <p style={styles.subtitle}>
-              Configure os pacotes do sistema, ajuste limites de precificação mensal e defina quais permissões operacionais estarão vinculadas.
-            </p>
+          <div style={styles.filterField}>
+            <label htmlFor="plan-status" style={styles.filterLabel}>
+              Status
+            </label>
+            <select
+              id="plan-status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+              style={styles.filterSelect}
+            >
+              <option value="all">Todos</option>
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+            </select>
           </div>
         </div>
 
@@ -997,7 +1079,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
           <Loader2 size={32} className="spinner" aria-hidden="true" style={{ color: "#7c3aed" }} />
           <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>Carregando planos…</span>
         </div>
-      ) : plans.length === 0 ? (
+      ) : filteredPlans.length === 0 ? (
         <div
           style={{
             display: "flex",
@@ -1057,7 +1139,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
         </div>
       ) : viewMode === "grid" ? (
         <div style={styles.gridContainer} role="region" aria-label="Lista de planos em cards">
-          {plans.map((plan) => (
+          {filteredPlans.map((plan) => (
             <article key={plan.id} style={styles.planCard} className="table-row-hover">
               <div style={styles.cardTop}>
                 <div>
@@ -1148,7 +1230,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
         </div>
       ) : (
         <div style={styles.listContainer} role="region" aria-label="Lista de planos">
-          {plans.map((plan) => (
+          {filteredPlans.map((plan) => (
             <div key={plan.id} style={styles.listRow} className="table-row-hover">
               <div style={styles.rowMain}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.9rem", flexWrap: "wrap" }}>

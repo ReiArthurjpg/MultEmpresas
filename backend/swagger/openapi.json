@@ -74,6 +74,7 @@
         "properties": {
           "id": {"type": "integer"},
           "company_id": {"type": "integer", "nullable": true},
+          "phone": {"type": "string"},
           "name": {"type": "string"},
           "email": {"type": "string"},
           "password": {"type": "string"},

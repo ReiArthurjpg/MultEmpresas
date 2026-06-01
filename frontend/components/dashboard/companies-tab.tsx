@@ -72,11 +72,11 @@ const styles = {
   },
   hero: {
     position: "relative",
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 320px)",
-    gap: "1.5rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
     overflow: "hidden",
-    padding: "2rem",
+    padding: "1.5rem",
     border: "1px solid rgba(14, 165, 233, 0.16)",
     borderRadius: "28px",
     background:
@@ -89,8 +89,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: "1.25rem",
-    minHeight: "160px",
+    gap: "1rem",
+    minHeight: "0",
   },
   eyebrow: {
     display: "inline-flex",
@@ -164,6 +164,52 @@ const styles = {
     alignItems: "center",
     gap: "0.75rem",
     marginTop: "0.5rem",
+  },
+  filterPanel: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    marginBottom: "0",
+  },
+  filterField: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+  },
+  filterLabel: {
+    color: "#475569",
+    fontSize: "0.72rem",
+    fontWeight: 700,
+  },
+  filterInput: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  filterSelect: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  toolbarRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "0",
+  },
+  toolbarActions: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.75rem",
   },
   // Table Styling
   tableContainer: {
@@ -477,6 +523,8 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
 
   // Search & filter
   const [searchTerm, setSearchTerm] = useState("");
+  const [planFilter, setPlanFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -689,12 +737,17 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
 
   const filteredCompanies = companies.filter((c) => {
     const search = searchTerm.toLowerCase();
-    return (
+    const searchMatch =
+      !search ||
       c.company_name.toLowerCase().includes(search) ||
       (c.trade_name && c.trade_name.toLowerCase().includes(search)) ||
       c.cnpj.includes(search) ||
-      c.email.toLowerCase().includes(search)
-    );
+      c.email.toLowerCase().includes(search);
+    
+    const planMatch = !planFilter || String(c.plan_id) === planFilter;
+    const statusMatch = statusFilter === "all" || (statusFilter === "active" ? c.active : !c.active);
+    
+    return searchMatch && planMatch && statusMatch;
   });
 
   return (
@@ -722,97 +775,120 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
       {/* Header */}
       <div className="overview-hero-card" style={styles.hero}>
         <div style={styles.heroContent}>
-          <div style={styles.eyebrow}>
-            <Building2 size={14} aria-hidden="true" />
-            Ecossistema Multi-Empresas
+          <h2 id="companies-tab-title" className="sr-only">
+            Empresas
+          </h2>
+        </div>
+
+        <div style={styles.filterPanel}>
+          <div style={styles.filterField}>
+            <label htmlFor="company-search" style={styles.filterLabel}>
+              Buscar
+            </label>
+            <input
+              id="company-search"
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Nome, CNPJ, email"
+              style={styles.filterInput}
+            />
           </div>
-          <div>
-            <h2 id="companies-tab-title" style={styles.title}>
-              Empresas
-            </h2>
-            <p style={styles.subtitle}>
-              Gerencie os inquilinos (tenants), controle a vinculação a planos do sistema, configure logotipos e audite localizações de rede.
-            </p>
+          <div style={styles.filterField}>
+            <label htmlFor="company-plan" style={styles.filterLabel}>
+              Plano
+            </label>
+            <select
+              id="company-plan"
+              value={planFilter}
+              onChange={(e) => setPlanFilter(e.target.value)}
+              style={styles.filterSelect}
+            >
+              <option value="">Todos os planos</option>
+              {plans.map((plan) => (
+                <option key={plan.id} value={String(plan.id)}>
+                  {plan.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterField}>
+            <label htmlFor="company-status" style={styles.filterLabel}>
+              Status
+            </label>
+            <select
+              id="company-status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+              style={styles.filterSelect}
+            >
+              <option value="all">Todos</option>
+              <option value="active">Ativas</option>
+              <option value="inactive">Inativas</option>
+            </select>
           </div>
         </div>
 
-        <aside className="overview-hero-aside" style={styles.heroAside}>
-          <div style={styles.statsRow}>
-            <div style={styles.statCard}>
-              <span style={styles.statLabel}>Total</span>
-              <strong style={styles.statValue}>{companies.length}</strong>
-            </div>
-            <div style={styles.statCard}>
-              <span style={styles.statLabel}>Ativas</span>
-              <strong style={styles.statValue}>
-                {companies.filter((c) => c.active).length}
-              </strong>
-            </div>
-          </div>
-
-          <div style={styles.actionsRow}>
-            {/* View Mode Toggle Segmented Control */}
-            <div
+        <div style={styles.toolbarRow}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              background: "#f1f5f9",
+              borderRadius: "12px",
+              padding: "0.25rem",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
               style={{
-                display: "inline-flex",
+                display: "flex",
                 alignItems: "center",
-                background: "#f1f5f9",
-                borderRadius: "12px",
-                padding: "0.25rem",
-                border: "1px solid #e2e8f0",
-                flex: 1,
+                justifyContent: "center",
+                gap: "0.35rem",
+                padding: "0.45rem 0.65rem",
+                borderRadius: "9px",
+                border: "none",
+                background: viewMode === "list" ? "#ffffff" : "transparent",
+                color: viewMode === "list" ? "#0f172a" : "#64748b",
+                boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
               }}
             >
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  flex: 1,
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: viewMode === "list" ? "#ffffff" : "transparent",
-                  color: viewMode === "list" ? "#0f172a" : "#64748b",
-                  boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <List size={14} />
-                Lista
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  flex: 1,
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: viewMode === "grid" ? "#ffffff" : "transparent",
-                  color: viewMode === "grid" ? "#0f172a" : "#64748b",
-                  boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <LayoutGrid size={14} />
-                Cards
-              </button>
-            </div>
+              <List size={14} />
+              Lista
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.35rem",
+                padding: "0.45rem 0.65rem",
+                borderRadius: "9px",
+                border: "none",
+                background: viewMode === "grid" ? "#ffffff" : "transparent",
+                color: viewMode === "grid" ? "#0f172a" : "#64748b",
+                boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <LayoutGrid size={14} />
+              Cards
+            </button>
+          </div>
 
+          <div style={styles.toolbarActions}>
             <button
               className="secondary-button"
               style={{
@@ -859,35 +935,7 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
               <Plus size={16} aria-hidden="true" />
             </button>
           </div>
-        </aside>
-      </div>
-
-      {/* Action/Search Bar */}
-      <div style={{ position: "relative", flex: 1, maxWidth: "420px", marginTop: "0.5rem" }}>
-        <Search
-          size={18}
-          style={{
-            position: "absolute",
-            left: "1rem",
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: "#64748b",
-          }}
-        />
-        <input
-          style={{
-            ...styles.input,
-            paddingLeft: "2.75rem",
-            width: "100%",
-            borderRadius: "14px",
-            border: "1px solid #e2e8f0",
-            background: "#ffffff",
-            boxShadow: "0 4px 12px rgba(15, 23, 42, 0.015)",
-          }}
-          placeholder="Buscar por razão social, CNPJ ou email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        </div>
       </div>
 
       {/* Error state */}

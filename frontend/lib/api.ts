@@ -56,6 +56,7 @@ export type User = {
   id: number;
   company_id: number | null;
   company_name?: string | null;
+  phone?: string | null;
   name: string;
   email: string;
   role: "MASTER" | "ADMIN" | "OPERATOR";
@@ -70,6 +71,7 @@ export type CreateUserPayload = {
   password: string;
   role: "MASTER" | "ADMIN" | "OPERATOR";
   company_id?: number | null;
+  phone?: string | null;
   must_change_password?: boolean;
 };
 

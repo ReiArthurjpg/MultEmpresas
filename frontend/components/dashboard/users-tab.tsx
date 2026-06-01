@@ -104,6 +104,7 @@ type UserForm = {
   role: User["role"];
   company_id: string; // Keep as string for select elements
   must_change_password: boolean;
+  phone: string;
 };
 
 const EMPTY_FORM: UserForm = {
@@ -113,6 +114,7 @@ const EMPTY_FORM: UserForm = {
   role: "OPERATOR",
   company_id: "",
   must_change_password: true,
+  phone: "",
 };
 
 const styles = {
@@ -645,6 +647,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       role: user.role,
       company_id: user.company_id ? String(user.company_id) : "",
       must_change_password: user.must_change_password,
+      phone: user.phone ?? "",
     });
     setFormError(null);
     setEditingUser(user);
@@ -688,6 +691,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           password: form.password,
           role: form.role,
           company_id: companyIdNum,
+          phone: form.phone || null,
           must_change_password: form.must_change_password,
         };
         await createUser(accessToken, payload);
@@ -697,6 +701,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           email: form.email,
           role: form.role,
           company_id: companyIdNum,
+          phone: form.phone || null,
           must_change_password: form.must_change_password,
         };
         if (form.password) payload.password = form.password;
@@ -1124,6 +1129,12 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                     {user.email}
                   </span>
 
+                  {user.phone && (
+                    <div style={{ color: "#64748b", fontSize: "0.85rem", marginTop: "0.25rem" }} title={user.phone}>
+                      {user.phone}
+                    </div>
+                  )}
+
                   <div style={styles.cardBadges}>
                     <span
                       style={{
@@ -1249,6 +1260,11 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                   <div style={{ color: "#64748b", fontSize: "0.8rem", fontWeight: 500, marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {user.email}
                   </div>
+                  {user.phone && (
+                    <div style={{ color: "#64748b", fontSize: "0.78rem", marginTop: "0.15rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {user.phone}
+                    </div>
+                  )}
                   <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.35rem", alignItems: "center", flexWrap: "wrap" }}>
                     <span
                       style={{
@@ -1501,6 +1517,19 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                   onChange={(e) => updateField("email", e.target.value)}
                   placeholder="joao@empresa.com"
                   autoComplete="email"
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="user-phone" style={styles.label}>Telefone</label>
+                <input
+                  id="user-phone"
+                  style={styles.input}
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  placeholder="(11) 91234-5678"
+                  autoComplete="tel"
                 />
               </div>
 
