@@ -199,6 +199,7 @@ type PlanForm = {
   name: string;
   description: string;
   price: string;
+  credits: string;
   active: boolean;
   permissions: string[];
 };
@@ -207,6 +208,7 @@ const EMPTY_FORM: PlanForm = {
   name: "",
   description: "",
   price: "0",
+  credits: "0",
   active: true,
   permissions: [],
 };
@@ -763,6 +765,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
       name: plan.name,
       description: plan.description || "",
       price: String(plan.price),
+      credits: String(plan.credits ?? 0),
       active: plan.active,
       permissions: plan.permissions || [],
     });
@@ -807,11 +810,14 @@ export function PlansTab({ accessToken }: PlansTabProps) {
     setSaving(true);
     setFormError(null);
 
+    const parsedCredits = parseInt(form.credits || "0") || 0;
+
     const payload: CreatePlanPayload = {
       name: form.name,
       description: form.description || null,
       price: parsedPrice,
       max_installments: selectedInstallments,
+      credits: parsedCredits,
       active: form.active,
       permissions: form.permissions,
     };
@@ -1158,6 +1164,9 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                   <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>
                     Parcelas: {(plan.max_installments ?? 1)}x
                   </div>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.15rem' }}>
+                    Créditos: {(plan.credits ?? 0)}
+                  </div>
                 </div>
                 <div>
                   {plan.active ? (
@@ -1252,6 +1261,9 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                   </strong>
                   <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
                     Parcelas: {(plan.max_installments ?? 1)}x
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                    Créditos: {(plan.credits ?? 0)}
                   </div>
                 </div>
                 <div style={styles.rowMeta}>
@@ -1456,7 +1468,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: '1rem', alignItems: 'end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px 160px', gap: '1rem', alignItems: 'end' }}>
                 <div style={styles.fieldGroup}>
                   <label htmlFor="plan-price" style={styles.label}>Preço mensal (BRL)</label>
                   <input
@@ -1488,6 +1500,19 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                       );
                     })}
                   </select>
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="plan-credits" style={styles.label}>Crédito</label>
+                  <input
+                    id="plan-credits"
+                    type="number"
+                    min="0"
+                    step="1"
+                    style={styles.input}
+                    value={form.credits}
+                    onChange={(e) => updateField('credits', e.target.value)}
+                  />
                 </div>
               </div>
 

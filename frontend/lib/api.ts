@@ -352,6 +352,7 @@ export type Plan = {
   description: string | null;
   price: number;
   max_installments?: number;
+  credits?: number;
   active: boolean;
   permissions?: string[];
   created_at?: string;
@@ -413,6 +414,7 @@ export type CreatePlanPayload = {
   description?: string | null;
   price: number;
   max_installments?: number | null;
+  credits?: number | null;
   active?: boolean;
   permissions?: string[];
 };
