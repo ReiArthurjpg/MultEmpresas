@@ -107,6 +107,7 @@ $router->add('POST', '/plans', function () use ($plans, $input, &$actor, $audit,
         'price' => $data['price'] ?? 0,
         'max_installments' => isset($data['max_installments']) ? (int) $data['max_installments'] : 1,
         'credits' => isset($data['credits']) ? (int) $data['credits'] : 0,
+        'max_users' => isset($data['max_users']) ? (int) $data['max_users'] : 0,
         'active' => $data['active'] ?? 1
     ]);
     $plans->syncPermissions($id, $permissions);

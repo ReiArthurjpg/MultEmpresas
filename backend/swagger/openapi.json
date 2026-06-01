@@ -46,6 +46,7 @@
           "id": {"type": "integer"},
           "max_installments": {"type": "integer", "example": 1},
           "credits": {"type": "integer", "example": 0},
+          "max_users": {"type": "integer", "example": 0},
           "name": {"type": "string"},
           "description": {"type": "string"},
           "price": {"type": "number"},

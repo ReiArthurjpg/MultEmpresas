@@ -200,6 +200,7 @@ type PlanForm = {
   description: string;
   price: string;
   credits: string;
+  maxUsers: string;
   active: boolean;
   permissions: string[];
 };
@@ -209,6 +210,7 @@ const EMPTY_FORM: PlanForm = {
   description: "",
   price: "0",
   credits: "0",
+  maxUsers: "0",
   active: true,
   permissions: [],
 };
@@ -766,6 +768,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
       description: plan.description || "",
       price: String(plan.price),
       credits: String(plan.credits ?? 0),
+      maxUsers: String(plan.max_users ?? 0),
       active: plan.active,
       permissions: plan.permissions || [],
     });
@@ -811,6 +814,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
     setFormError(null);
 
     const parsedCredits = parseInt(form.credits || "0") || 0;
+    const parsedMaxUsers = parseInt(form.maxUsers || "0") || 0;
 
     const payload: CreatePlanPayload = {
       name: form.name,
@@ -818,6 +822,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
       price: parsedPrice,
       max_installments: selectedInstallments,
       credits: parsedCredits,
+      max_users: parsedMaxUsers,
       active: form.active,
       permissions: form.permissions,
     };
@@ -1167,6 +1172,9 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                   <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.15rem' }}>
                     Créditos: {(plan.credits ?? 0)}
                   </div>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.15rem' }}>
+                    Limite: {(plan.max_users ?? 0)} usuários
+                  </div>
                 </div>
                 <div>
                   {plan.active ? (
@@ -1264,6 +1272,9 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                   </div>
                   <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
                     Créditos: {(plan.credits ?? 0)}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                    Limite: {(plan.max_users ?? 0)} usuários
                   </div>
                 </div>
                 <div style={styles.rowMeta}>
@@ -1468,7 +1479,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px 160px', gap: '1rem', alignItems: 'end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 120px 120px', gap: '1rem', alignItems: 'end' }}>
                 <div style={styles.fieldGroup}>
                   <label htmlFor="plan-price" style={styles.label}>Preço mensal (BRL)</label>
                   <input
@@ -1512,6 +1523,19 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                     style={styles.input}
                     value={form.credits}
                     onChange={(e) => updateField('credits', e.target.value)}
+                  />
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="plan-max-users" style={styles.label}>Limite de usuários</label>
+                  <input
+                    id="plan-max-users"
+                    type="number"
+                    min="0"
+                    step="1"
+                    style={styles.input}
+                    value={form.maxUsers}
+                    onChange={(e) => updateField('maxUsers', e.target.value)}
                   />
                 </div>
               </div>

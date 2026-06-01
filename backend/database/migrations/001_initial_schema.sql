@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS plans (
   price DECIMAL(12,2) NOT NULL DEFAULT 0,
   max_installments INT NOT NULL DEFAULT 1,
   credits INT NOT NULL DEFAULT 0,
+  max_users INT NOT NULL DEFAULT 0,
   active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NULL,
   updated_at TIMESTAMP NULL
