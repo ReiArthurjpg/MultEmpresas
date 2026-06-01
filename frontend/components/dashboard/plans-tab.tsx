@@ -710,6 +710,7 @@ const actionBtnDangerStyle: CSSProperties = {
 
 export function PlansTab({ accessToken }: PlansTabProps) {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [selectedInstallments, setSelectedInstallments] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -753,6 +754,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
     setForm(EMPTY_FORM);
     setFormError(null);
     setEditingPlan(null);
+    setSelectedInstallments(1);
     setModalMode("create");
   }
 
@@ -766,6 +768,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
     });
     setFormError(null);
     setEditingPlan(plan);
+    setSelectedInstallments(plan.max_installments ?? 1);
     setModalMode("edit");
   }
 
@@ -808,6 +811,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
       name: form.name,
       description: form.description || null,
       price: parsedPrice,
+      max_installments: selectedInstallments,
       active: form.active,
       permissions: form.permissions,
     };
@@ -1151,6 +1155,9 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                       ? "Grátis"
                       : plan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </strong>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    Parcelas: {(plan.max_installments ?? 1)}x
+                  </div>
                 </div>
                 <div>
                   {plan.active ? (
@@ -1243,6 +1250,9 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                       ? "Grátis"
                       : plan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </strong>
+                  <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                    Parcelas: {(plan.max_installments ?? 1)}x
+                  </div>
                 </div>
                 <div style={styles.rowMeta}>
                   {plan.active ? (
@@ -1446,7 +1456,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: '1rem', alignItems: 'end' }}>
                 <div style={styles.fieldGroup}>
                   <label htmlFor="plan-price" style={styles.label}>Preço mensal (BRL)</label>
                   <input
@@ -1456,31 +1466,32 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                     step="0.01"
                     style={styles.input}
                     value={form.price}
-                    onChange={(e) => updateField("price", e.target.value)}
+                    onChange={(e) => updateField('price', e.target.value)}
                   />
                 </div>
 
                 <div style={styles.fieldGroup}>
-                  <label htmlFor="plan-active" style={styles.label}>Status</label>
+                  <label htmlFor="plan-installments" style={styles.label}>Parcelamento</label>
                   <select
-                    id="plan-active"
-                    style={{
-                      ...styles.input,
-                      appearance: "none",
-                      backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "right 1rem center",
-                      backgroundSize: "1.2rem",
-                      paddingRight: "2.5rem",
-                    }}
-                    value={form.active ? "true" : "false"}
-                    onChange={(e) => updateField("active", e.target.value === "true")}
+                    id="plan-installments"
+                    style={{ ...styles.input, appearance: 'none' }}
+                    value={String(selectedInstallments)}
+                    onChange={(e) => setSelectedInstallments(Number(e.target.value))}
                   >
-                    <option value="true">Ativo</option>
-                    <option value="false">Inativo</option>
+                    {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => {
+                      const p = parseFloat(form.price || '0') || 0;
+                      const per = n > 0 ? p / n : 0;
+                      return (
+                        <option key={n} value={String(n)}>
+                          {`${n}x — ${per.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
+
+              {/* Removed status select and parceling simulation as requested */}
 
               {/* Permissões Checklist */}
               <div style={{ ...styles.fieldGroup, marginTop: "1rem" }}>

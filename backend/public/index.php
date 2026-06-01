@@ -101,8 +101,15 @@ $router->add('POST', '/auth/2fa/disable', function () use (&$actor, $users) {
 $router->add('GET', '/plans', fn () => ['data' => $plans->all()], true, ['MASTER']);
 $router->add('POST', '/plans', function () use ($plans, $input, &$actor, $audit, $ip, $ua) {
     $data = $input(); $permissions = $data['permissions'] ?? []; unset($data['permissions']);
-    $id = $plans->create(['name' => $data['name'], 'description' => $data['description'] ?? null, 'price' => $data['price'] ?? 0, 'active' => $data['active'] ?? 1]);
-    $plans->syncPermissions($id, $permissions); $audit->write(null, $actor['user_id'], 'CREATE', 'plans', $id, $ip(), $ua());
+    $id = $plans->create([
+        'name' => $data['name'],
+        'description' => $data['description'] ?? null,
+        'price' => $data['price'] ?? 0,
+        'max_installments' => isset($data['max_installments']) ? (int) $data['max_installments'] : 1,
+        'active' => $data['active'] ?? 1
+    ]);
+    $plans->syncPermissions($id, $permissions);
+    $audit->write(null, $actor['user_id'], 'CREATE', 'plans', $id, $ip(), $ua());
     return ['id' => $id];
 }, true, ['MASTER']);
 $router->add('GET', '/plans/{id}', fn ($p) => ['data' => $plans->find((int) $p['id'])], true, ['MASTER']);
