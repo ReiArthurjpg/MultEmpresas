@@ -101,13 +101,19 @@ $router->add('POST', '/auth/2fa/disable', function () use (&$actor, $users) {
 $router->add('GET', '/plans', fn () => ['data' => $plans->all()], true, ['MASTER']);
 $router->add('POST', '/plans', function () use ($plans, $input, &$actor, $audit, $ip, $ua) {
     $data = $input(); $permissions = $data['permissions'] ?? []; unset($data['permissions']);
+    $maxInstallments = isset($data['max_installments']) ? (int) $data['max_installments'] : 1;
+    if ($maxInstallments < 1 || $maxInstallments > 8) { throw new RuntimeException('`max_installments` deve estar entre 1 e 8.'); }
+    $credits = isset($data['credits']) ? (int) $data['credits'] : 0;
+    if ($credits < 0) { throw new RuntimeException('`credits` deve ser maior ou igual a 0.'); }
+    $maxUsers = isset($data['max_users']) ? (int) $data['max_users'] : 0;
+    if ($maxUsers < 0) { throw new RuntimeException('`max_users` deve ser maior ou igual a 0.'); }
     $id = $plans->create([
         'name' => $data['name'],
         'description' => $data['description'] ?? null,
         'price' => $data['price'] ?? 0,
-        'max_installments' => isset($data['max_installments']) ? (int) $data['max_installments'] : 1,
-        'credits' => isset($data['credits']) ? (int) $data['credits'] : 0,
-        'max_users' => isset($data['max_users']) ? (int) $data['max_users'] : 0,
+        'max_installments' => $maxInstallments,
+        'credits' => $credits,
+        'max_users' => $maxUsers,
         'active' => $data['active'] ?? 1
     ]);
     $plans->syncPermissions($id, $permissions);
@@ -116,7 +122,18 @@ $router->add('POST', '/plans', function () use ($plans, $input, &$actor, $audit,
 }, true, ['MASTER']);
 $router->add('GET', '/plans/{id}', fn ($p) => ['data' => $plans->find((int) $p['id'])], true, ['MASTER']);
 $router->add('PUT', '/plans/{id}', function ($p) use ($plans, $input, &$actor, $audit, $ip, $ua) {
-    $data = $input(); $permissions = $data['permissions'] ?? null; unset($data['permissions']); $plans->save((int) $p['id'], $data); if (is_array($permissions)) { $plans->syncPermissions((int) $p['id'], $permissions); }
+    $data = $input(); $permissions = $data['permissions'] ?? null; unset($data['permissions']);
+    if (isset($data['max_installments'])) {
+        $mi = (int) $data['max_installments']; if ($mi < 1 || $mi > 8) { throw new RuntimeException('`max_installments` deve estar entre 1 e 8.'); } $data['max_installments'] = $mi;
+    }
+    if (isset($data['credits'])) {
+        $cr = (int) $data['credits']; if ($cr < 0) { throw new RuntimeException('`credits` deve ser maior ou igual a 0.'); } $data['credits'] = $cr;
+    }
+    if (isset($data['max_users'])) {
+        $mu = (int) $data['max_users']; if ($mu < 0) { throw new RuntimeException('`max_users` deve ser maior ou igual a 0.'); } $data['max_users'] = $mu;
+    }
+    $plans->save((int) $p['id'], $data);
+    if (is_array($permissions)) { $plans->syncPermissions((int) $p['id'], $permissions); }
     $audit->write(null, $actor['user_id'], 'UPDATE', 'plans', (int) $p['id'], $ip(), $ua()); return ['message' => 'Plano atualizado.'];
 }, true, ['MASTER']);
 $router->add('DELETE', '/plans/{id}', function ($p) use ($plans, &$actor, $audit, $ip, $ua) { $plans->delete((int) $p['id']); $audit->write(null, $actor['user_id'], 'DELETE', 'plans', (int) $p['id'], $ip(), $ua()); return ['message' => 'Plano removido.']; }, true, ['MASTER']);
@@ -124,6 +141,13 @@ $router->add('DELETE', '/plans/{id}', function ($p) use ($plans, &$actor, $audit
 $router->add('GET', '/companies', function () use ($companies, &$actor) { return ['data' => $companies->all($actor)]; }, true, ['MASTER','ADMIN']);
 $router->add('POST', '/companies', function () use ($companies, $input, &$actor, $audit, $ip, $ua) { $data = $input(); $id = $companies->create($data + ['active' => 1]); $audit->write($id, $actor['user_id'], 'CREATE', 'companies', $id, $ip(), $ua()); return ['id' => $id]; }, true, ['MASTER']);
 $router->add('GET', '/companies/{id}', function ($p) use ($companies, &$actor) { return ['data' => $companies->find((int) $p['id'], $actor)]; }, true, ['MASTER','ADMIN']);
+$router->add('GET', '/companies/{id}/stats', function ($p) use ($pdo, &$actor) {
+    $id = (int) $p['id'];
+    $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM users WHERE company_id = :id');
+    $stmt->execute(['id' => $id]);
+    $total = (int) $stmt->fetchColumn();
+    return ['data' => ['user_count' => $total]];
+}, true, ['MASTER','ADMIN']);
 $router->add('PUT', '/companies/{id}', function ($p) use ($companies, $input, &$actor, $audit, $ip, $ua) { $companies->save((int) $p['id'], $input()); $audit->write($actor['company_id'], $actor['user_id'], 'UPDATE', 'companies', (int) $p['id'], $ip(), $ua()); return ['message' => 'Empresa atualizada.']; }, true, ['MASTER','ADMIN']);
 $router->add('DELETE', '/companies/{id}', function ($p) use ($companies, &$actor, $audit, $ip, $ua) { $companies->delete((int) $p['id']); $audit->write(null, $actor['user_id'], 'DELETE', 'companies', (int) $p['id'], $ip(), $ua()); return ['message' => 'Empresa removida.']; }, true, ['MASTER']);
 $router->add('GET', '/companies/cnpj/{cnpj}', function ($p) {
@@ -147,11 +171,22 @@ $router->add('POST', '/companies/{id}/logo', function ($p) use ($companies, &$ac
 $router->add('GET', '/users', function () use ($users, &$actor) { return ['data' => $users->all($actor)]; }, true, ['MASTER','ADMIN']);
 $router->add('POST', '/users', function () use ($users, $input, &$actor, $audit, $ip, $ua) {
     $data = $input(); if ($actor['role'] === 'ADMIN') { $data['company_id'] = $actor['company_id']; $data['role'] = 'OPERATOR'; }
-    $data['password'] = password_hash((string) $data['password'], PASSWORD_ARGON2ID); $data += ['active' => 1, 'two_factor_enabled' => 0, 'must_change_password' => 1];
+    if (isset($data['phone']) && strlen((string) $data['phone']) > 40) { throw new RuntimeException('`phone` deve ter no máximo 40 caracteres.'); }
+    if (isset($data['credits'])) { $data['credits'] = (int) $data['credits']; if ($data['credits'] < 0) { throw new RuntimeException('`credits` deve ser maior ou igual a 0.'); } }
+    $data['password'] = password_hash((string) $data['password'], PASSWORD_ARGON2ID);
+    $data += ['active' => 1, 'two_factor_enabled' => 0, 'must_change_password' => 1, 'credits' => $data['credits'] ?? 0];
     $id = $users->create($data); $audit->write($data['company_id'] ?? null, $actor['user_id'], 'CREATE', 'users', $id, $ip(), $ua()); return ['id' => $id];
 }, true, ['MASTER','ADMIN']);
 $router->add('GET', '/users/{id}', function ($p) use ($users, &$actor) { return ['data' => $users->find((int) $p['id'], $actor)]; }, true, ['MASTER','ADMIN']);
-$router->add('PUT', '/users/{id}', function ($p) use ($users, $input, &$actor, $audit, $ip, $ua) { $data = $input(); if (isset($data['password'])) { $data['password'] = password_hash((string) $data['password'], PASSWORD_ARGON2ID); } $users->save((int) $p['id'], $data); $audit->write($actor['company_id'], $actor['user_id'], 'UPDATE', 'users', (int) $p['id'], $ip(), $ua()); return ['message' => 'Usuário atualizado.']; }, true, ['MASTER','ADMIN']);
+$router->add('PUT', '/users/{id}', function ($p) use ($users, $input, &$actor, $audit, $ip, $ua) {
+    $data = $input();
+    if (isset($data['phone']) && strlen((string) $data['phone']) > 40) { throw new RuntimeException('`phone` deve ter no máximo 40 caracteres.'); }
+    if (isset($data['credits'])) { $data['credits'] = (int) $data['credits']; if ($data['credits'] < 0) { throw new RuntimeException('`credits` deve ser maior ou igual a 0.'); } }
+    if (isset($data['password'])) { $data['password'] = password_hash((string) $data['password'], PASSWORD_ARGON2ID); }
+    $users->save((int) $p['id'], $data);
+    $audit->write($actor['company_id'], $actor['user_id'], 'UPDATE', 'users', (int) $p['id'], $ip(), $ua());
+    return ['message' => 'Usuário atualizado.'];
+}, true, ['MASTER','ADMIN']);
 $router->add('DELETE', '/users/{id}', function ($p) use ($users, &$actor, $audit, $ip, $ua) { $users->delete((int) $p['id']); $audit->write($actor['company_id'], $actor['user_id'], 'DELETE', 'users', (int) $p['id'], $ip(), $ua()); return ['message' => 'Usuário removido.']; }, true, ['MASTER','ADMIN']);
 $router->add('GET', '/audit-logs', function () use ($audit, &$actor) { return ['data' => $audit->all($actor)]; }, true, ['MASTER','ADMIN']);
 

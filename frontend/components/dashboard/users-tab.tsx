@@ -21,10 +21,13 @@ import {
   listUsers,
   updateUser,
   listCompanies,
+  getPlan,
+  getCompanyStats,
   type CreateUserPayload,
   type User,
   type Company,
 } from "@/lib/api";
+import { getSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // ── Tooltip via portal (bypasses overflow:hidden parents) ─────────────────────
@@ -105,6 +108,7 @@ type UserForm = {
   company_id: string; // Keep as string for select elements
   must_change_password: boolean;
   phone: string;
+  credits: string;
 };
 
 const EMPTY_FORM: UserForm = {
@@ -115,6 +119,7 @@ const EMPTY_FORM: UserForm = {
   company_id: "",
   must_change_password: true,
   phone: "",
+  credits: "0",
 };
 
 const styles = {
@@ -561,6 +566,9 @@ function normalizeUsersResponse(raw: unknown): User[] {
 export function UsersTab({ accessToken }: UsersTabProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const session = getSession();
+  const currentUserRole = session?.user?.role;
+  const currentUserCompanyId = session?.user?.company_id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -572,6 +580,8 @@ export function UsersTab({ accessToken }: UsersTabProps) {
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form, setForm] = useState<UserForm>(EMPTY_FORM);
+  const [companyPlanInfo, setCompanyPlanInfo] = useState<{ max_users?: number; credits?: number } | null>(null);
+  const [companyUserCount, setCompanyUserCount] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -636,6 +646,19 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     setForm(EMPTY_FORM);
     setFormError(null);
     setEditingUser(null);
+    // If current user is ADMIN, preselect their company and role
+    const session = getSession();
+    if (session?.user?.role === "ADMIN") {
+      setForm((prev) => ({ ...prev, role: "OPERATOR", company_id: String(session.user.company_id ?? "") }));
+      // load plan info for their company
+      const compId = session.user.company_id;
+      if (compId) {
+        const comp = companies.find((c) => c.id === compId);
+        if (comp?.plan_id) {
+          getPlan(accessToken, comp.plan_id).then((res) => setCompanyPlanInfo(res.data ?? null)).catch(() => setCompanyPlanInfo(null));
+        }
+      }
+    }
     setModalMode("create");
   }
 
@@ -648,10 +671,22 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       company_id: user.company_id ? String(user.company_id) : "",
       must_change_password: user.must_change_password,
       phone: user.phone ?? "",
+      credits: String(user.credits ?? 0),
     });
     setFormError(null);
     setEditingUser(user);
     setModalMode("edit");
+    // load plan info for selected user's company
+    if (user.company_id) {
+      const comp = companies.find((c) => c.id === user.company_id);
+      if (comp?.plan_id) {
+        getPlan(accessToken, comp.plan_id).then((res) => setCompanyPlanInfo(res.data ?? null)).catch(() => setCompanyPlanInfo(null));
+      } else {
+        setCompanyPlanInfo(null);
+      }
+    } else {
+      setCompanyPlanInfo(null);
+    }
   }
 
   function closeModal() {
@@ -664,6 +699,20 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setFormError(null);
   }
+
+  // When company selection in modal changes, update plan info
+  useEffect(() => {
+    const compId = form.company_id ? Number(form.company_id) : null;
+    if (!compId) { setCompanyPlanInfo(null); return; }
+    const comp = companies.find((c) => c.id === compId);
+    if (comp?.plan_id) {
+      getPlan(accessToken, comp.plan_id).then((res) => setCompanyPlanInfo(res.data ?? null)).catch(() => setCompanyPlanInfo(null));
+    } else {
+      setCompanyPlanInfo(null);
+    }
+    // fetch company user count
+    getCompanyStats(accessToken, compId).then((res) => setCompanyUserCount(res.data?.user_count ?? null)).catch(() => setCompanyUserCount(null));
+  }, [form.company_id, companies, accessToken]);
 
   async function handleSave() {
     if (!form.name.trim()) {
@@ -692,6 +741,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           role: form.role,
           company_id: companyIdNum,
           phone: form.phone || null,
+          credits: parseInt(form.credits || "0") || 0,
           must_change_password: form.must_change_password,
         };
         await createUser(accessToken, payload);
@@ -702,6 +752,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           role: form.role,
           company_id: companyIdNum,
           phone: form.phone || null,
+          credits: parseInt(form.credits || "0") || 0,
           must_change_password: form.must_change_password,
         };
         if (form.password) payload.password = form.password;
@@ -1566,7 +1617,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                 >
                   <option value="OPERATOR">Operador</option>
                   <option value="ADMIN">Administrador</option>
-                  <option value="MASTER">Master</option>
+                  <option value="MASTER" disabled={currentUserRole === "ADMIN"}>Master</option>
                 </select>
               </div>
 
@@ -1585,6 +1636,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                   }}
                   value={form.company_id}
                   onChange={(e) => updateField("company_id", e.target.value)}
+                  disabled={currentUserRole === "ADMIN"}
                 >
                   <option value="">Sem empresa (Vínculo Master/Geral)</option>
                   {companies.map((company) => (
@@ -1594,6 +1646,20 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                   ))}
                 </select>
               </div>
+
+              {companyPlanInfo && (
+                <div style={{ color: "#64748b", fontSize: "0.9rem", marginTop: "0.25rem" }}>
+                  Limite de usuários do plano: <strong style={{ color: "#0f172a" }}>{companyPlanInfo.max_users ?? 0}</strong>
+                  {" — "}
+                  Créditos do plano: <strong style={{ color: "#0f172a" }}>{companyPlanInfo.credits ?? 0}</strong>
+                </div>
+              )}
+
+              {companyUserCount !== null && (
+                <div style={{ color: "#475569", fontSize: "0.92rem", marginTop: "0.35rem" }}>
+                  Usuários cadastrados nesta empresa: <strong style={{ color: "#0f172a" }}>{companyUserCount}</strong>
+                </div>
+              )}
 
               <label
                 style={{
@@ -1621,6 +1687,19 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                   Exigir troca de senha no próximo login
                 </span>
               </label>
+
+              <div style={{ ...styles.fieldGroup, marginTop: "0.5rem" }}>
+                <label htmlFor="user-credits" style={styles.label}>Créditos</label>
+                <input
+                  id="user-credits"
+                  type="number"
+                  min="0"
+                  step="1"
+                  style={styles.input}
+                  value={form.credits}
+                  onChange={(e) => updateField("credits", e.target.value)}
+                />
+              </div>
 
               {formError && (
                 <div

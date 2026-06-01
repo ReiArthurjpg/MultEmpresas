@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS users (
   role ENUM('MASTER','ADMIN','OPERATOR') NOT NULL,
   avatar VARCHAR(255) NULL,
   phone VARCHAR(40) NULL,
+  credits INT NOT NULL DEFAULT 0,
   active TINYINT(1) NOT NULL DEFAULT 1,
   two_factor_enabled TINYINT(1) NOT NULL DEFAULT 0,
   two_factor_secret VARCHAR(64) NULL,

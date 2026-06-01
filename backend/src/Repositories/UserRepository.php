@@ -8,7 +8,7 @@ final class UserRepository extends BaseRepository
 {
     public function byEmail(string $email): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT u.id,u.company_id,u.name,u.email,u.role,u.avatar,u.phone,u.active,u.two_factor_enabled,u.must_change_password,u.password,u.created_at,u.updated_at,c.company_name,c.logo_url,c.active AS company_active FROM users u LEFT JOIN companies c ON c.id = u.company_id WHERE u.email = :email LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT u.id,u.company_id,u.name,u.email,u.role,u.avatar,u.phone,u.credits,u.active,u.two_factor_enabled,u.must_change_password,u.password,u.created_at,u.updated_at,c.company_name,c.logo_url,c.active AS company_active FROM users u LEFT JOIN companies c ON c.id = u.company_id WHERE u.email = :email LIMIT 1');
         $stmt->execute(['email' => $email]);
         return $stmt->fetch() ?: null;
     }
@@ -16,7 +16,7 @@ final class UserRepository extends BaseRepository
     public function all(array $actor): array
     {
         [$where, $params] = $this->tenantWhere($actor, 'u');
-        $stmt = $this->pdo->prepare('SELECT u.id,u.company_id,u.name,u.email,u.role,u.avatar,u.phone,u.active,u.two_factor_enabled,u.must_change_password,u.created_at,u.updated_at,c.company_name FROM users u LEFT JOIN companies c ON c.id = u.company_id WHERE 1=1' . $where . ' ORDER BY u.id DESC');
+        $stmt = $this->pdo->prepare('SELECT u.id,u.company_id,u.name,u.email,u.role,u.avatar,u.phone,u.credits,u.active,u.two_factor_enabled,u.must_change_password,u.created_at,u.updated_at,c.company_name FROM users u LEFT JOIN companies c ON c.id = u.company_id WHERE 1=1' . $where . ' ORDER BY u.id DESC');
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
@@ -24,7 +24,7 @@ final class UserRepository extends BaseRepository
     public function find(int $id, array $actor): ?array
     {
         [$where, $params] = $this->tenantWhere($actor, 'u');
-        $stmt = $this->pdo->prepare('SELECT u.id,u.company_id,u.name,u.email,u.role,u.avatar,u.phone,u.active,u.two_factor_enabled,u.must_change_password,u.created_at,u.updated_at,c.company_name FROM users u LEFT JOIN companies c ON c.id = u.company_id WHERE u.id = :id' . $where);
+        $stmt = $this->pdo->prepare('SELECT u.id,u.company_id,u.name,u.email,u.role,u.avatar,u.phone,u.credits,u.active,u.two_factor_enabled,u.must_change_password,u.created_at,u.updated_at,c.company_name FROM users u LEFT JOIN companies c ON c.id = u.company_id WHERE u.id = :id' . $where);
         $stmt->execute(['id' => $id] + $params);
         return $stmt->fetch() ?: null;
     }
