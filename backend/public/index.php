@@ -143,10 +143,38 @@ $router->add('POST', '/companies', function () use ($companies, $input, &$actor,
 $router->add('GET', '/companies/{id}', function ($p) use ($companies, &$actor) { return ['data' => $companies->find((int) $p['id'], $actor)]; }, true, ['MASTER','ADMIN']);
 $router->add('GET', '/companies/{id}/stats', function ($p) use ($pdo, &$actor) {
     $id = (int) $p['id'];
+    // basic user count
     $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM users WHERE company_id = :id');
     $stmt->execute(['id' => $id]);
     $total = (int) $stmt->fetchColumn();
-    return ['data' => ['user_count' => $total]];
+
+    // try to get plan credits and used credits; be tolerant if columns are missing
+    $planCredits = null;
+    $planMaxUsers = null;
+    $usedCredits = 0;
+    $stmt = $pdo->prepare('SELECT c.plan_id, p.credits AS plan_credits, p.max_users AS plan_max_users FROM companies c LEFT JOIN plans p ON p.id = c.plan_id WHERE c.id = :id');
+    $stmt->execute(['id' => $id]);
+    $row = $stmt->fetch();
+    if ($row) {
+        $planCredits = $row['plan_credits'] !== null ? (int) $row['plan_credits'] : null;
+        $planMaxUsers = $row['plan_max_users'] !== null ? (int) $row['plan_max_users'] : null;
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT COALESCE(SUM(credits),0) FROM users WHERE company_id = :id');
+        $stmt->execute(['id' => $id]);
+        $usedCredits = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {
+        // column may not exist; keep usedCredits=0
+        $usedCredits = 0;
+    }
+
+    $available = null;
+    if ($planCredits !== null) {
+        $available = $planCredits - $usedCredits;
+    }
+
+    return ['data' => ['user_count' => $total, 'plan_credits' => $planCredits, 'used_credits' => $usedCredits, 'available_credits' => $available, 'plan_max_users' => $planMaxUsers]];
 }, true, ['MASTER','ADMIN']);
 $router->add('PUT', '/companies/{id}', function ($p) use ($companies, $input, &$actor, $audit, $ip, $ua) { $companies->save((int) $p['id'], $input()); $audit->write($actor['company_id'], $actor['user_id'], 'UPDATE', 'companies', (int) $p['id'], $ip(), $ua()); return ['message' => 'Empresa atualizada.']; }, true, ['MASTER','ADMIN']);
 $router->add('DELETE', '/companies/{id}', function ($p) use ($companies, &$actor, $audit, $ip, $ua) { $companies->delete((int) $p['id']); $audit->write(null, $actor['user_id'], 'DELETE', 'companies', (int) $p['id'], $ip(), $ua()); return ['message' => 'Empresa removida.']; }, true, ['MASTER']);

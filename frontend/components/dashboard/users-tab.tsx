@@ -582,6 +582,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
   const [form, setForm] = useState<UserForm>(EMPTY_FORM);
   const [companyPlanInfo, setCompanyPlanInfo] = useState<{ max_users?: number; credits?: number } | null>(null);
   const [companyUserCount, setCompanyUserCount] = useState<number | null>(null);
+  const [companyAvailableCredits, setCompanyAvailableCredits] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -711,7 +712,13 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       setCompanyPlanInfo(null);
     }
     // fetch company user count
-    getCompanyStats(accessToken, compId).then((res) => setCompanyUserCount(res.data?.user_count ?? null)).catch(() => setCompanyUserCount(null));
+    getCompanyStats(accessToken, compId).then((res) => {
+      setCompanyUserCount(res.data?.user_count ?? null);
+      setCompanyAvailableCredits(res.data?.available_credits ?? null);
+    }).catch(() => {
+      setCompanyUserCount(null);
+      setCompanyAvailableCredits(null);
+    });
   }, [form.company_id, companies, accessToken]);
 
   async function handleSave() {
@@ -1658,6 +1665,9 @@ export function UsersTab({ accessToken }: UsersTabProps) {
               {companyUserCount !== null && (
                 <div style={{ color: "#475569", fontSize: "0.92rem", marginTop: "0.35rem" }}>
                   Usuários cadastrados nesta empresa: <strong style={{ color: "#0f172a" }}>{companyUserCount}</strong>
+                  {companyAvailableCredits !== null && (
+                    <span> — Crédito disponível: <strong style={{ color: "#0f172a" }}>{companyAvailableCredits}</strong></span>
+                  )}
                 </div>
               )}
 

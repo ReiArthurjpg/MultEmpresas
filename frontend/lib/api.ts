@@ -456,7 +456,7 @@ export async function getCompany(accessToken: string, id: number) {
 
 /** GET /companies/:id/stats — retorna estatísticas rápidas da empresa (ex: quantidade de usuários) */
 export async function getCompanyStats(accessToken: string, id: number) {
-  return request<{ data: { user_count: number } }>(`/companies/${id}/stats`, {
+  return request<{ data: { user_count: number; plan_credits?: number | null; used_credits?: number; available_credits?: number | null; plan_max_users?: number | null } }>(`/companies/${id}/stats`, {
     method: "GET",
     headers: authHeaders(accessToken),
   });
