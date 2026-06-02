@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Session } from "@/lib/api";
-import { ShinyText } from "@/components/ui/shiny-text";
 
 export type DashboardTab =
   | "overview"
@@ -36,17 +35,15 @@ type SidebarProps = {
   onToggle: () => void;
 };
 
-// Top-level nav items (non-grouped)
 const TOP_NAV_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; roles?: string[] }[] = [
   { tab: "overview", label: "Visão Geral", icon: LayoutDashboard },
 ];
 
-// Items grouped under "Cadastro" dropdown
 const CADASTRO_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; roles?: string[] }[] = [
-  { tab: "users",     label: "Usuários", icon: Users,     roles: ["MASTER", "ADMIN"] },
+  { tab: "users", label: "Usuários", icon: Users, roles: ["MASTER", "ADMIN"] },
   { tab: "companies", label: "Empresas", icon: Building2, roles: ["MASTER"] },
-  { tab: "company",   label: "Minha Empresa", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
-  { tab: "plans",     label: "Planos",   icon: Award,     roles: ["MASTER"] },
+  { tab: "company", label: "Minha Empresa", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
+  { tab: "plans", label: "Planos", icon: Award, roles: ["MASTER"] },
 ];
 
 export function Sidebar({
@@ -59,11 +56,8 @@ export function Sidebar({
   onToggle,
 }: SidebarProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
-  const [spotlightOpacity, setSpotlightOpacity] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [cadastroOpen, setCadastroOpen] = useState(false);
-  const asideRef = useRef<HTMLElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
@@ -105,16 +99,6 @@ export function Sidebar({
 
   const isVisualCollapsed = collapsed && !isHovered;
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!asideRef.current) return;
-    const rect = asideRef.current.getBoundingClientRect();
-    setCoords({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
-  // Close user dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -133,352 +117,169 @@ export function Sidebar({
     OPERATOR: "Operador",
   };
 
+  const navButtonClass = (active: boolean) =>
+    cn(
+      "group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left text-sm font-bold tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/50",
+      isVisualCollapsed && "justify-center px-3",
+      active
+        ? "border-l-4 border-[#D4AF37] bg-white/[0.04] text-white shadow-[inset_0_0_0_1px_rgba(212,175,55,0.08)]"
+        : "border-l-4 border-transparent text-slate-400 hover:bg-white/[0.025] hover:text-white"
+    );
+
   return (
     <aside
-      ref={asideRef}
-      className={cn("db-sidebar", isVisualCollapsed && "db-sidebar--collapsed")}
-      onMouseEnter={() => {
-        setIsHovered(true);
-        setSpotlightOpacity(1);
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setSpotlightOpacity(0);
-      }}
-      onMouseMove={handleMouseMove}
+      className={cn(
+        "sticky top-0 z-50 flex h-screen shrink-0 flex-col justify-between overflow-visible border-r border-white/5 bg-[#05070B] text-white shadow-[4px_0_40px_rgba(0,0,0,0.45)] transition-[width] duration-300",
+        isVisualCollapsed ? "w-20" : "w-72"
+      )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Spotlight overlay background */}
-      <div
-        className="pointer-events-none absolute z-0 transition-opacity duration-300"
-        style={{
-          inset: 0,
-          opacity: spotlightOpacity,
-          background: `radial-gradient(120px circle at ${coords.x}px ${coords.y}px, oklch(0.55 0.18 210 / 0.08), transparent 80%)`,
-        }}
-      />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.018] [background-image:radial-gradient(#ffffff_1px,transparent_1px)] [background-size:18px_18px]" />
+      <div className="pointer-events-none absolute -right-20 top-0 h-64 w-64 rounded-full bg-[#D4AF37]/5 blur-[90px]" />
 
-      {/* Logo / toggle */}
-      <div className="db-sidebar__header" style={{ position: "relative", zIndex: 10 }}>
-        {!isVisualCollapsed && (
-          <span className="db-sidebar__brand">
-            <ShinyText text="MultEmpresas" speed={4} />
-          </span>
-        )}
-        <button
-          className="db-sidebar__toggle"
-          onClick={onToggle}
-          aria-label={isVisualCollapsed ? "Expandir menu" : "Recolher menu"}
-          type="button"
-        >
-          <span className="db-sidebar__toggle-icon">{isVisualCollapsed ? "→" : "←"}</span>
-        </button>
+      <div className="relative z-10 min-w-0">
+        <div className={cn("flex min-h-20 items-center gap-3 border-b border-white/5 bg-[#040609] p-5", isVisualCollapsed ? "justify-center" : "justify-between")}>
+          {!isVisualCollapsed && (
+            <span className="truncate text-xl font-black uppercase italic tracking-tight text-white">
+              Mult<span className="text-[#D4AF37] drop-shadow-[0_0_12px_rgba(212,175,55,0.35)]">Empresas</span>
+            </span>
+          )}
+          <button
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-all hover:border-[#D4AF37]/40 hover:text-[#D4AF37] active:scale-95"
+            onClick={onToggle}
+            aria-label={isVisualCollapsed ? "Expandir menu" : "Recolher menu"}
+            type="button"
+          >
+            <span className="text-sm font-black">{isVisualCollapsed ? "→" : "←"}</span>
+          </button>
+        </div>
+
+        <nav className="space-y-1.5 p-4" aria-label="Menu principal">
+          {visibleTopItems.map(({ tab, label, icon: Icon }) => (
+            <button
+              key={tab}
+              className={navButtonClass(activeTab === tab)}
+              onClick={() => onTabChange(tab)}
+              type="button"
+              title={isVisualCollapsed ? label : undefined}
+              aria-current={activeTab === tab ? "page" : undefined}
+            >
+              <Icon size={18} className={activeTab === tab ? "text-[#D4AF37]" : "text-slate-500 group-hover:text-[#D4AF37]"} aria-hidden="true" />
+              {!isVisualCollapsed && <span>{label}</span>}
+            </button>
+          ))}
+
+          {visibleCadastroItems.length > 0 && (
+            <div className="space-y-1">
+              <button
+                type="button"
+                title={isVisualCollapsed ? "Cadastro" : undefined}
+                className={navButtonClass(isCadastroActive)}
+                onClick={() => setCadastroOpen((v) => !v)}
+                aria-expanded={cadastroOpen}
+              >
+                <ClipboardList size={18} className={isCadastroActive ? "text-[#D4AF37]" : "text-slate-500 group-hover:text-[#D4AF37]"} aria-hidden="true" />
+                {!isVisualCollapsed && <span className="flex-1">Cadastro</span>}
+                {!isVisualCollapsed && <ChevronDown size={15} className={cn("text-slate-500 transition-transform duration-300", cadastroOpen && "rotate-180")} aria-hidden="true" />}
+              </button>
+
+              {cadastroOpen && !isVisualCollapsed && (
+                <div className="ml-6 space-y-1 border-l border-white/5 py-1 pl-4">
+                  {visibleCadastroItems.map(({ tab, label, icon: Icon }) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]/40",
+                        activeTab === tab ? "bg-white/[0.04] text-[#D4AF37]" : "text-slate-500 hover:bg-white/[0.02] hover:text-slate-300"
+                      )}
+                      onClick={() => {
+                        onTabChange(tab);
+                        setCadastroOpen(true);
+                      }}
+                      aria-current={activeTab === tab ? "page" : undefined}
+                    >
+                      <Icon size={14} aria-hidden="true" />
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </nav>
       </div>
 
-      {/* Navigation */}
-      <nav
-        className="db-sidebar__nav"
-        aria-label="Menu principal"
-        style={{ position: "relative", zIndex: 10 }}
-      >
-        {/* Top-level items */}
-        {visibleTopItems.map(({ tab, label, icon: Icon }) => (
-          <button
-            key={tab}
-            className={cn("db-sidebar__item", activeTab === tab && "db-sidebar__item--active")}
-            onClick={() => onTabChange(tab)}
-            type="button"
-            title={isVisualCollapsed ? label : undefined}
-            aria-current={activeTab === tab ? "page" : undefined}
-          >
-            <Icon size={20} aria-hidden="true" />
-            {!isVisualCollapsed && <span>{label}</span>}
-          </button>
-        ))}
-
-        {/* Cadastro dropdown (only render if user has access to any child) */}
-        {visibleCadastroItems.length > 0 && (
-          <div>
-            {/* Dropdown trigger */}
-            <button
-              type="button"
-              title={isVisualCollapsed ? "Cadastro" : undefined}
-              className={cn(
-                "db-sidebar__item",
-                isCadastroActive && "db-sidebar__item--active"
-              )}
-              style={{ justifyContent: "space-between" }}
-              onClick={() => setCadastroOpen((v) => !v)}
-              aria-expanded={cadastroOpen}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
-                <ClipboardList size={20} aria-hidden="true" />
-                {!isVisualCollapsed && <span>Cadastro</span>}
-              </span>
-              {!isVisualCollapsed && (
-                <ChevronDown
-                  size={15}
-                  aria-hidden="true"
-                  style={{
-                    flexShrink: 0,
-                    color: "#64748b",
-                    transition: "transform 0.22s ease",
-                    transform: cadastroOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  }}
-                />
-              )}
-            </button>
-
-            {/* Sub-items */}
-            {cadastroOpen && !isVisualCollapsed && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.25rem",
-                  marginLeft: "1.25rem",
-                  paddingLeft: "0.85rem",
-                  marginTop: "0.25rem",
-                  marginBottom: "0.5rem",
-                  borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
-                  animation: "dropdownFadeIn 0.18s ease",
-                }}
-              >
-                {visibleCadastroItems.map(({ tab, label, icon: Icon }) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    className={cn(
-                      "db-sidebar__item",
-                      activeTab === tab && "db-sidebar__item--active"
-                    )}
-                    style={{ 
-                      fontSize: "0.825rem", 
-                      paddingTop: "0.45rem", 
-                      paddingBottom: "0.45rem",
-                      paddingLeft: "0.75rem",
-                      height: "34px",
-                      borderRadius: "6px",
-                      opacity: activeTab === tab ? 1 : 0.8,
-                    }}
-                    onClick={() => {
-                      onTabChange(tab);
-                      setCadastroOpen(true);
-                    }}
-                    aria-current={activeTab === tab ? "page" : undefined}
-                  >
-                    <Icon size={15} aria-hidden="true" style={{ opacity: 0.9 }} />
-                    <span>{label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </nav>
-
-      {/* Footer: user dropdown */}
-      <div
-        className="db-sidebar__footer"
-        style={{ position: "relative", zIndex: 20 }}
-        ref={dropdownRef}
-      >
-        {/* Dropdown menu — opens upward */}
-        {dropdownOpen && (
+      <div className="relative z-20 border-t border-white/5 bg-[#040609]/70 p-4" ref={dropdownRef}>
+        {dropdownOpen && !isVisualCollapsed && (
           <div
             role="menu"
             aria-label="Opções do usuário"
-            style={{
-              position: "absolute",
-              bottom: "calc(100% + 10px)",
-              left: 0,
-              right: 0,
-              background: "#1e293b",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "16px",
-              overflow: "hidden",
-              boxShadow: "0 -8px 32px rgba(0,0,0,0.35)",
-              animation: "dropdownFadeIn 0.18s ease",
-            }}
+            className="absolute bottom-[86px] left-4 right-4 overflow-hidden rounded-2xl border border-white/10 bg-[#0A0E1A] p-3 shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
           >
-            {/* User info header inside dropdown */}
-            {!isVisualCollapsed && (
-              <div
-                style={{
-                  padding: "0.85rem 1rem",
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <span
-                  style={{
-                    display: "block",
-                    color: "#f1f5f9",
-                    fontSize: "0.85rem",
-                    fontWeight: 700,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {session.user.name}
-                </span>
-                <span
-                  style={{
-                    display: "block",
-                    color: "#94a3b8",
-                    fontSize: "0.72rem",
-                    fontWeight: 600,
-                    marginTop: "0.1rem",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {session.user.email}
-                </span>
-              </div>
-            )}
-
-            {/* Meu Perfil */}
+            <div className="mb-1 border-b border-white/5 px-3 py-2">
+              <span className="block truncate text-sm font-black text-white">{session.user.name}</span>
+              <span className="mt-0.5 block truncate text-[11px] font-bold text-slate-500">{session.user.email}</span>
+            </div>
             <button
               type="button"
               role="menuitem"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.65rem",
-                width: "100%",
-                padding: "0.75rem 1rem",
-                background: "transparent",
-                border: "none",
-                color: "#e2e8f0",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "background 0.15s",
-                textAlign: "left",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-300 transition-all hover:bg-white/[0.03] hover:text-white"
               onClick={() => {
                 onTabChange("profile");
                 setDropdownOpen(false);
               }}
             >
-              <UserCircle size={16} aria-hidden="true" />
+              <UserCircle size={14} className="text-[#D4AF37]" aria-hidden="true" />
               Meu Perfil
             </button>
-
-            {/* Divider */}
-            <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "0.25rem 0" }} />
-
-            {/* Sair */}
+            <div className="my-1 h-px bg-white/5" />
             <button
               type="button"
               role="menuitem"
               disabled={isLoggingOut}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.65rem",
-                width: "100%",
-                padding: "0.75rem 1rem",
-                background: "transparent",
-                border: "none",
-                color: "#f87171",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                cursor: isLoggingOut ? "not-allowed" : "pointer",
-                opacity: isLoggingOut ? 0.6 : 1,
-                transition: "background 0.15s",
-                textAlign: "left",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.1)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-rose-500 transition-all hover:bg-rose-950/25 hover:text-rose-400 disabled:opacity-60"
               onClick={() => {
                 setDropdownOpen(false);
                 onLogout();
               }}
             >
-              <LogOut size={16} aria-hidden="true" />
+              <LogOut size={14} aria-hidden="true" />
               {isLoggingOut ? "Saindo…" : "Sair"}
             </button>
           </div>
         )}
 
-        {/* Trigger: user card */}
         <button
           type="button"
           aria-haspopup="menu"
           aria-expanded={dropdownOpen}
           aria-label="Abrir menu do usuário"
           onClick={() => setDropdownOpen((v) => !v)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-            width: "100%",
-            padding: "0.6rem 0.75rem",
-            background: dropdownOpen
-              ? "rgba(255,255,255,0.08)"
-              : "transparent",
-            border: "1px solid",
-            borderColor: dropdownOpen
-              ? "rgba(255,255,255,0.12)"
-              : "transparent",
-            borderRadius: "14px",
-            cursor: "pointer",
-            transition: "background 0.18s, border-color 0.18s",
-            textAlign: "left",
-          }}
-          onMouseEnter={(e) => {
-            if (!dropdownOpen) {
-              e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-              e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!dropdownOpen) {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "transparent";
-            }
-          }}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all active:scale-[0.98]",
+            dropdownOpen ? "border-[#D4AF37]/50 bg-[#080B12] ring-2 ring-[#D4AF37]/10" : "border-white/5 bg-[#080B12]/80 hover:border-white/10",
+            isVisualCollapsed && "justify-center px-2"
+          )}
         >
-          <div className="db-sidebar__avatar" aria-hidden="true" style={{ flexShrink: 0, overflow: "hidden" }}>
-            {profileImage ? (
-              <img src={profileImage} alt={session.user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              initials
-            )}
+          <div className="relative shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#D4AF37]/30 bg-[#0A101D] p-0.5 text-xs font-black text-white shadow-[0_0_10px_rgba(212,175,55,0.15)]">
+              {profileImage ? <img src={profileImage} alt={session.user.name} className="h-full w-full rounded-full object-cover" /> : initials}
+            </div>
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#05070B] bg-emerald-500" />
           </div>
-
           {!isVisualCollapsed && (
             <>
-              <div className="db-sidebar__user-info" style={{ flex: 1, minWidth: 0 }}>
-                <span className="db-sidebar__user-name">{session.user.name}</span>
-                <span className="db-sidebar__user-role">{ROLE_LABELS[role] ?? role}</span>
+              <div className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-bold leading-tight tracking-wide text-white">{session.user.name}</span>
+                <span className="mt-0.5 block truncate text-[10px] font-black uppercase tracking-wider text-slate-500">{ROLE_LABELS[role] ?? role}</span>
               </div>
-              <ChevronUp
-                size={15}
-                aria-hidden="true"
-                style={{
-                  flexShrink: 0,
-                  color: "#64748b",
-                  transition: "transform 0.2s ease",
-                  transform: dropdownOpen ? "rotate(0deg)" : "rotate(180deg)",
-                }}
-              />
+              <ChevronUp size={14} className={cn("shrink-0 text-slate-500 transition-transform duration-300", dropdownOpen && "rotate-180")} aria-hidden="true" />
             </>
           )}
         </button>
       </div>
-
-      <style>{`
-        @keyframes dropdownFadeIn {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </aside>
   );
 }
-
