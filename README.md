@@ -57,6 +57,7 @@ Endpoints usados pelo login:
 - Senha: `Master@123`
 - `must_change_password` nasce ativo para exigir troca de senha no primeiro login.
 
+
 ## Arquitetura
 
 A API foi organizada em camadas inspiradas em Clean Architecture e DDD: domínio, aplicação, infraestrutura, apresentação, repositórios, serviços, middlewares, DTOs e validadores. O tenant é obtido do JWT (`company_id`) e aplicado nos repositórios para usuários, empresas e auditoria.
