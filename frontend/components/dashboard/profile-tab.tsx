@@ -286,6 +286,7 @@ export function ProfileTab({
   const hasUpperLower = /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword);
   const hasNumberSpecial = /[0-9]/.test(newPassword) || /[^A-Za-z0-9]/.test(newPassword);
   const passwordsMatch = newPassword === confirmPassword && confirmPassword !== "";
+  const canViewProfileAudit = ["MASTER", "ADMIN"].includes(user.role);
 
   const profileDetails = [
     { icon: User, label: "Nome Completo", value: user.name },
@@ -457,7 +458,7 @@ export function ProfileTab({
           </section>
         </div>
 
-        {["MASTER", "ADMIN"].includes(user.role) && (
+        {canViewProfileAudit ? (
           <section className="premium-profile-card rounded-2xl" aria-labelledby="audit-card-title">
             <div className="mb-6 flex flex-col justify-between gap-4 border-b border-white/5 pb-4 md:flex-row md:items-center">
               <div>
@@ -492,7 +493,7 @@ export function ProfileTab({
                   <span className="font-bold text-slate-500">Assinatura Digital:</span>
                   <span className="font-mono font-black text-[#D4AF37]">VERYTAS-SHA256</span>
                 </div>
-              ))}
+              </div>
             </div>
 
             <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-6">
@@ -503,7 +504,7 @@ export function ProfileTab({
               </button>
             </div>
           </section>
-        )}
+        ) : null}
       </div>
 
       {isModalOpen && (
