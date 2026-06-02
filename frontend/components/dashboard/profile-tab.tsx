@@ -492,7 +492,7 @@ export function ProfileTab({
                   <span className="font-bold text-slate-500">Assinatura Digital:</span>
                   <span className="font-mono font-black text-[#D4AF37]">VERYTAS-SHA256</span>
                 </div>
-              </div>
+              ))}
             </div>
 
             <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-6">
