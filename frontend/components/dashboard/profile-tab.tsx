@@ -7,7 +7,6 @@ import {
   Building2,
   Camera,
   CheckCircle2,
-  Edit2,
   Eye,
   EyeOff,
   KeyRound,
@@ -15,9 +14,9 @@ import {
   Mail,
   QrCode,
   Shield,
+  Smartphone,
   ShieldCheck,
   ShieldOff,
-  Sparkles,
   Trash2,
   User,
   X,
@@ -49,40 +48,6 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrador",
   OPERATOR: "Operador",
 };
-
-function PremiumCardHeader({
-  kicker,
-  title,
-  badge,
-  badgeTone = "gold",
-}: {
-  kicker: string;
-  title: string;
-  badge?: string;
-  badgeTone?: "gold" | "green" | "amber" | "rose" | "blue";
-}) {
-  const badgeClasses = {
-    gold: "border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]",
-    green: "border-emerald-500/25 bg-emerald-500/10 text-emerald-400",
-    amber: "border-amber-500/25 bg-amber-500/10 text-amber-400",
-    rose: "border-rose-500/25 bg-rose-500/10 text-rose-400",
-    blue: "border-blue-500/25 bg-blue-500/10 text-blue-400",
-  }[badgeTone];
-
-  return (
-    <div className="mb-6 flex items-start justify-between gap-4 border-b border-white/5 pb-4">
-      <div>
-        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#D4AF37]">{kicker}</span>
-        <h3 className="mt-1 text-lg font-black uppercase tracking-tight text-white">{title}</h3>
-      </div>
-      {badge ? (
-        <span className={cn("rounded border px-2 py-0.5 text-[8px] font-black uppercase tracking-wider", badgeClasses)}>
-          {badge}
-        </span>
-      ) : null}
-    </div>
-  );
-}
 
 export function ProfileTab({
   session,
@@ -326,7 +291,7 @@ export function ProfileTab({
     { icon: User, label: "Nome Completo", value: user.name },
     { icon: Mail, label: "Endereço de Email", value: user.email },
     { icon: Activity, label: "Nível de Acesso", value: roleLabel },
-    { icon: Shield, label: "Autenticação 2FA", value: twoFactorEnabled ? "Habilitado" : "Pendente de Ativação" },
+    { icon: Smartphone, label: "Autenticação 2FA", value: twoFactorEnabled ? "Habilitado" : "Pendente de Ativação" },
     { icon: Building2, label: "Organização / Empresa", value: company?.name ?? "Administração Global" },
   ];
 
@@ -347,145 +312,199 @@ export function ProfileTab({
       <div className="pointer-events-none absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-[#D4AF37]/10 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-40 left-1/4 -z-10 h-80 w-80 rounded-full bg-blue-500/[0.04] blur-[120px]" />
 
-      <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-[#0A0E17]/95 via-[#05070B] to-[#D4AF37]/10 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.35)] md:p-8">
-        <div className="absolute inset-0 opacity-[0.025] [background-image:radial-gradient(#ffffff_1px,transparent_1px)] [background-size:18px_18px]" />
-        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-stretch">
-          <div className="flex min-h-[190px] flex-col justify-between gap-8">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-[#D4AF37]">
-              <Sparkles size={14} aria-hidden="true" />
-              Configurações da conta
-            </div>
-            <div>
-              <h2 id="profile-tab-title" className="text-4xl font-black uppercase italic leading-none tracking-tighter text-white md:text-5xl">
-                Olá, <span className="bg-gradient-to-r from-white via-white to-[#D4AF37] bg-clip-text text-transparent">{userFirstName}.</span>
-              </h2>
-              <p className="mt-4 max-w-2xl text-sm font-semibold leading-relaxed text-slate-400">
-                Gerencie suas informações de perfil, permissões de acesso e credenciais corporativas com a mesma camada visual premium do login.
-              </p>
-            </div>
+      <div className="flex flex-col items-start justify-between gap-6 border-b border-white/5 pb-6 xl:flex-row xl:items-center">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#D4AF37]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_8px_#D4AF37]" />
+            Configurações da Conta
           </div>
+          <h2 id="profile-tab-title" className="text-3xl font-black uppercase italic tracking-tight text-white">
+            Olá, <span className="bg-gradient-to-r from-white via-white to-[#D4AF37] bg-clip-text text-transparent drop-shadow-sm">{user.name}.</span>
+          </h2>
+          <p className="max-w-xl text-xs font-semibold leading-relaxed text-slate-400">
+            Gerencie suas informações de perfil, nível de permissão e mantenha as credenciais corporativas salvas com segurança máxima.
+          </p>
+        </div>
 
-          <aside className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
-            <span className={cn("inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider", user.active === false ? "border-rose-500/25 bg-rose-500/10 text-rose-400" : "border-emerald-500/25 bg-emerald-500/10 text-emerald-400")}>
-              <CheckCircle2 size={14} aria-hidden="true" />
-              Conta {accountStatus}
-            </span>
-            <div className="mt-7 flex items-center gap-4">
-              {renderAvatar("h-14 w-14")}
-              <div className="min-w-0">
-                <strong className="block truncate text-sm font-black uppercase tracking-wide text-white">{user.name}</strong>
-                <span className="mt-1 block text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">{roleLabel}</span>
-              </div>
+        <div className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-[#090D15]/90 p-4 shadow-xl backdrop-blur-xl sm:w-auto">
+          {renderAvatar("h-11 w-11")}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Status da Conta</span>
+              <span className={cn("rounded border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider", user.active === false ? "border-rose-500/20 bg-rose-500/10 text-rose-400" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400")}>
+                {user.active === false ? "INATIVO" : "ATIVO"}
+              </span>
             </div>
-          </aside>
+            <p className="mt-0.5 truncate text-xs font-bold uppercase tracking-wide text-white">{user.name}</p>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <aside className="premium-profile-card" aria-labelledby="profile-details-title">
-          <PremiumCardHeader kicker="Sessão" title="Detalhes do perfil" />
-          <div className="space-y-3.5" role="list">
-            {profileDetails.map(({ icon: Icon, label, value }) => (
-              <article key={label} className="flex items-center gap-3.5 rounded-xl border border-white/5 bg-white/[0.015] p-3" role="listitem">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/10 bg-[#D4AF37]/5 text-[#D4AF37]">
-                  <Icon size={17} aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <span className="block text-[8px] font-black uppercase tracking-widest text-slate-500">{label}</span>
-                  <strong className="mt-1 block truncate text-xs font-bold text-white" title={value}>{value}</strong>
-                </div>
-              </article>
-            ))}
+      {(error || success || twofaApiError || twofaSuccessMsg) && !isModalOpen && !is2FAModalOpen && (
+        <div className={cn(
+          "flex items-center justify-between rounded-xl border p-4 text-xs font-bold",
+          error || twofaApiError
+            ? "border-rose-500/20 bg-rose-950/20 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.05)]"
+            : "border-emerald-500/20 bg-emerald-950/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.05)]"
+        )}>
+          <div className="flex items-center gap-3">
+            {error || twofaApiError ? <X size={16} className="text-rose-500" aria-hidden="true" /> : <CheckCircle2 size={16} className="text-emerald-500" aria-hidden="true" />}
+            <span>{error ?? twofaApiError ?? success ?? twofaSuccessMsg}</span>
           </div>
-          <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-5">
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Sessão segura ativa</span>
-            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.9)]" />
-          </div>
-        </aside>
+          <button type="button" onClick={() => { setError(null); setSuccess(null); setTwofaApiError(null); setTwofaSuccessMsg(null); }} className="text-[10px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-white">
+            Fechar
+          </button>
+        </div>
+      )}
 
-        <section className="premium-profile-card" aria-labelledby="security-info-title">
-          <PremiumCardHeader kicker="Segurança" title={user.must_change_password ? "Alerta" : "Forte"} badge={user.must_change_password ? "Atenção" : "Seguro"} badgeTone={user.must_change_password ? "amber" : "green"} />
-          <p className="text-xs font-bold leading-relaxed text-slate-400">
-            {user.must_change_password ? "Sua conta está usando uma senha provisória e necessita de alteração imediata." : "Sua senha atende às diretrizes de segurança da plataforma."}
-          </p>
-          <div className="mt-6 space-y-3">
-            <span className="block text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Diretrizes de Segurança:</span>
-            {["Mínimo 8 caracteres", "Letras maiúsculas & minúsculas", "Números & caracteres especiais", "Autenticação 2FA ativada", "Foto de perfil para auditoria"].map((item) => (
-              <div key={item} className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
-                <CheckCircle2 size={14} className="shrink-0 text-[#D4AF37]" aria-hidden="true" />
-                <span>{item}</span>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <aside className="premium-profile-card rounded-2xl" aria-labelledby="profile-details-title">
+            <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-4">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#D4AF37]">Sessão</span>
+                <h3 id="profile-details-title" className="mt-0.5 text-lg font-black uppercase tracking-tight text-white">Detalhes do perfil</h3>
               </div>
-            ))}
-          </div>
-          <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/5 pt-6">
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Dados de Acesso</span>
-            <button type="button" className="premium-action-button" onClick={() => setIsModalOpen(true)}>
-              <Edit2 size={13} aria-hidden="true" />
-              Editar Cadastro
-            </button>
-          </div>
-        </section>
-
-        <section className="premium-profile-card" aria-labelledby="twofa-card-title">
-          <PremiumCardHeader kicker="2FA" title={twoFactorEnabled ? "Ativo" : "Inativo"} badge={twoFactorEnabled ? "Habilitado" : "Pendente"} badgeTone={twoFactorEnabled ? "green" : "amber"} />
-          <p className="text-xs font-bold leading-relaxed text-slate-400">
-            {twoFactorEnabled ? "Sua conta está protegida com autenticação em dois fatores (TOTP)." : "Recomendamos ativar o 2FA para proteger sua conta com uma camada extra."}
-          </p>
-          <div className="mt-6 space-y-3">
-            <span className="block text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Aplicativos Suportados:</span>
-            {["Google Authenticator", "Microsoft Authenticator", "Authy", "1Password", "Qualquer app TOTP"].map((app) => (
-              <div key={app} className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
-                <CheckCircle2 size={14} className="shrink-0 text-emerald-400" aria-hidden="true" />
-                <span>{app}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/5 pt-6">
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Autenticação 2FA</span>
-            <button type="button" className="premium-action-button" onClick={() => { reset2FAState(); setIs2FAModalOpen(true); }}>
-              <Shield size={13} aria-hidden="true" />
-              {twoFactorEnabled ? "Gerenciar" : "Configurar"}
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {["MASTER", "ADMIN"].includes(user.role) && (
-        <section className="premium-profile-card" aria-labelledby="audit-card-title">
-          <div className="flex flex-col justify-between gap-4 border-b border-white/5 pb-5 md:flex-row md:items-start">
-            <div>
-              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-blue-400">Auditoria</span>
-              <h3 id="audit-card-title" className="mt-1 text-3xl font-black uppercase italic tracking-tight text-white">Logs</h3>
-              <p className="mt-3 max-w-3xl text-xs font-bold leading-relaxed text-slate-400">
-                Acompanhe o histórico de acessos, alterações e ações executadas por todos os usuários do sistema em tempo real.
-              </p>
+              <User size={18} className="text-slate-600" aria-hidden="true" />
             </div>
-            <span className="w-fit rounded border border-blue-500/25 bg-blue-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-blue-400">Rastreabilidade</span>
-          </div>
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
+
+            <div className="space-y-3.5" role="list">
+              {profileDetails.map(({ icon: Icon, label, value }) => (
+                <article key={label} className="flex items-center gap-3.5 rounded-xl border border-white/5 bg-white/[0.01] p-2.5" role="listitem">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#D4AF37]/10 bg-[#D4AF37]/5 text-[#D4AF37]">
+                    <Icon size={16} aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 overflow-hidden">
+                    <p className="text-[8px] font-black uppercase leading-none tracking-widest text-slate-500">{label}</p>
+                    <p className="mt-1 truncate text-xs font-bold text-white" title={value}>{value}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-6">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Sessão Segura Ativa</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+            </div>
+          </aside>
+
+          <section className="premium-profile-card rounded-2xl" aria-labelledby="security-info-title">
+            <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-4">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-500">Segurança</span>
+                <h3 id="security-info-title" className="mt-0.5 text-lg font-black uppercase tracking-tight text-white">{user.must_change_password ? "Alerta" : "Forte"}</h3>
+              </div>
+              <span className={cn("rounded border px-2 py-0.5 text-[8px] font-black uppercase tracking-wider", user.must_change_password ? "border-amber-500/20 bg-amber-500/10 text-amber-400" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400")}>
+                {user.must_change_password ? "Atenção" : "Seguro"}
+              </span>
+            </div>
+
+            <p className="mb-6 text-xs font-bold leading-relaxed text-slate-400">
+              {user.must_change_password ? "Sua conta está utilizando uma senha provisória e necessita de alteração imediata." : "Sua conta está com credenciais atualizadas e protegidas pelas diretrizes Verytas."}
+            </p>
+
             <div className="space-y-3">
-              <span className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Recursos Monitorados:</span>
-              {["Tentativas e logs de Login", "Criação e edição de usuários", "Alterações em planos e empresas"].map((item) => (
+              <span className="block text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Diretrizes de Segurança:</span>
+              {["Mínimo 8 caracteres", "Letras maiúsculas & minúsculas", "Números & caracteres especiais", twoFactorEnabled ? "Autenticação 2FA ativada" : "Autenticação 2FA pendente", profileImage ? "Foto de perfil para auditoria" : "Foto de perfil recomendada"].map((item) => (
                 <div key={item} className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
                   <CheckCircle2 size={14} className="shrink-0 text-[#D4AF37]" aria-hidden="true" />
                   <span>{item}</span>
                 </div>
               ))}
             </div>
-            <div className="flex flex-col justify-center gap-2 rounded-xl border border-white/5 bg-white/[0.015] p-4">
-              <div className="flex items-center justify-between gap-4 text-xs"><span className="font-bold text-slate-500">Monitorando porta:</span><span className="font-mono font-bold text-slate-300">TLS 1.3 / Port 443</span></div>
-              <div className="flex items-center justify-between gap-4 text-xs"><span className="font-bold text-slate-500">Assinatura Digital:</span><span className="font-mono font-black text-[#D4AF37]">VERYTAS-SHA256</span></div>
+
+            <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/5 pt-6">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Dados de Acesso</span>
+              <button type="button" className="premium-action-button" onClick={() => setIsModalOpen(true)}>
+                <KeyRound size={12} aria-hidden="true" />
+                Alterar Senha
+              </button>
             </div>
-          </div>
-          <div className="mt-6 flex items-center justify-between gap-3 border-t border-white/5 pt-6">
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Logs do Sistema</span>
-            <button type="button" className="premium-action-button" onClick={() => onNavigate("audit")}>
-              <ArrowUpRight size={13} aria-hidden="true" />
-              Visualizar Logs
-            </button>
-          </div>
-        </section>
-      )}
+          </section>
+
+          <section className="premium-profile-card rounded-2xl" aria-labelledby="twofa-card-title">
+            <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-4">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-emerald-500">2FA</span>
+                <h3 id="twofa-card-title" className="mt-0.5 text-lg font-black uppercase tracking-tight text-white">{twoFactorEnabled ? "Ativo" : "Inativo"}</h3>
+              </div>
+              <span className={cn("rounded border px-2 py-0.5 text-[8px] font-black uppercase tracking-wider", twoFactorEnabled ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-amber-500/20 bg-amber-500/10 text-amber-400")}>
+                {twoFactorEnabled ? "Habilitado" : "Pendente"}
+              </span>
+            </div>
+
+            <p className="mb-6 text-xs font-bold leading-relaxed text-slate-400">
+              {twoFactorEnabled ? "Sua conta está devidamente protegida com autenticação em dois fatores (TOTP)." : "Configure a autenticação em dois fatores para elevar a segurança do acesso."}
+            </p>
+
+            <div className="space-y-3">
+              <span className="block text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Aplicativos Suportados:</span>
+              {["Google Authenticator", "Microsoft Authenticator", "Authy", "1Password", "Qualquer app TOTP"].map((app) => (
+                <div key={app} className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
+                  <CheckCircle2 size={14} className="shrink-0 text-emerald-400" aria-hidden="true" />
+                  <span>{app}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/5 pt-6">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Autenticação 2FA</span>
+              <button type="button" className="premium-action-button" onClick={() => { reset2FAState(); setIs2FAModalOpen(true); }}>
+                <Smartphone size={12} aria-hidden="true" />
+                {twoFactorEnabled ? "Gerenciar" : "Configurar"}
+              </button>
+            </div>
+          </section>
+        </div>
+
+        {["MASTER", "ADMIN"].includes(user.role) && (
+          <section className="premium-profile-card rounded-2xl" aria-labelledby="audit-card-title">
+            <div className="mb-6 flex flex-col justify-between gap-4 border-b border-white/5 pb-4 md:flex-row md:items-center">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-blue-500">Auditoria</span>
+                <h3 id="audit-card-title" className="mt-1 text-2xl font-black uppercase italic tracking-tight text-white">Logs</h3>
+                <p className="mt-2 text-xs font-bold text-slate-400">
+                  Acompanhe o histórico de acessos, alterações e ações executadas por todos os usuários do sistema em tempo real.
+                </p>
+              </div>
+              <span className="w-fit rounded border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-blue-400">
+                Rastreabilidade
+              </span>
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="space-y-3">
+                <span className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Recursos Monitorados:</span>
+                {["Tentativas e logs de Login", "Criação e edição de usuários", "Alterações em planos e empresas"].map((item) => (
+                  <div key={item} className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
+                    <span className="text-sm text-[#D4AF37]">✓</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col justify-center space-y-1.5 rounded-xl border border-white/5 bg-white/[0.01] p-4">
+                <div className="flex items-center justify-between gap-4 text-xs">
+                  <span className="font-bold text-slate-500">Monitorando porta:</span>
+                  <span className="font-mono font-bold text-slate-300">TLS 1.3 / Port 443</span>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-xs">
+                  <span className="font-bold text-slate-500">Assinatura Digital:</span>
+                  <span className="font-mono font-black text-[#D4AF37]">VERYTAS-SHA256</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-6">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Logs do Sistema</span>
+              <button type="button" className="premium-action-button" onClick={() => onNavigate("audit")}>
+                <ArrowUpRight size={12} aria-hidden="true" />
+                Visualizar Logs
+              </button>
+            </div>
+          </section>
+        )}
+      </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#010204]/90 p-4 backdrop-blur-md" onClick={handleCloseModal}>
@@ -494,7 +513,7 @@ export function ProfileTab({
             <div className="flex items-center justify-between border-b border-white/5 bg-[#05080F] px-6 py-5">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]"><KeyRound size={16} aria-hidden="true" /></div>
-                <div><h4 className="text-sm font-black uppercase tracking-wider text-white">Editar Cadastro & Senha</h4><p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Cofre de segurança Verytas</p></div>
+                <div><h4 className="text-sm font-black uppercase tracking-wider text-white">Alterar Senha de Acesso</h4><p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Cofre de segurança Verytas</p></div>
               </div>
               <button type="button" className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-400 transition-colors hover:text-white" onClick={handleCloseModal} aria-label="Fechar"><X size={16} /></button>
             </div>
