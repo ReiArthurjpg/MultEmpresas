@@ -1,14 +1,12 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity,
   ArrowUpRight,
   Building2,
   Camera,
   CheckCircle2,
-  Edit2,
   Eye,
   EyeOff,
   KeyRound,
@@ -16,23 +14,21 @@ import {
   Mail,
   QrCode,
   Shield,
-  ShieldAlert,
+  Smartphone,
   ShieldCheck,
   ShieldOff,
-  Sparkles,
   Trash2,
   User,
   X,
-  XCircle,
 } from "lucide-react";
 import {
   changePassword,
-  saveSession,
+  disable2FA,
+  enable2FA,
   getSession,
+  saveSession,
   setup2FA,
   verify2FA,
-  enable2FA,
-  disable2FA,
   type Session,
   type TwoFactorSetupResponse,
 } from "@/lib/api";
@@ -53,231 +49,6 @@ const ROLE_LABELS: Record<string, string> = {
   OPERATOR: "Operador",
 };
 
-const TONE_STYLES: Record<string, { bg: string; color: string }> = {
-  blue: { bg: "rgba(37, 99, 235, 0.1)", color: "#2563eb" },
-  purple: { bg: "rgba(124, 58, 237, 0.1)", color: "#7c3aed" },
-  green: { bg: "rgba(16, 185, 129, 0.12)", color: "#059669" },
-  yellow: { bg: "rgba(245, 158, 11, 0.14)", color: "#b45309" },
-  red: { bg: "rgba(239, 68, 68, 0.12)", color: "#dc2626" },
-};
-
-const styles = {
-  dashboard: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.5rem",
-    width: "100%",
-  },
-  hero: {
-    position: "relative",
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 300px)",
-    gap: "1.5rem",
-    overflow: "hidden",
-    padding: "2rem",
-    border: "1px solid rgba(37, 99, 235, 0.16)",
-    borderRadius: "28px",
-    background:
-      "radial-gradient(circle at 8% 20%, rgba(59, 130, 246, 0.18), transparent 32%), radial-gradient(circle at 92% 12%, rgba(124, 58, 237, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f7f5ff 100%)",
-    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.08)",
-  },
-  heroContent: {
-    position: "relative",
-    zIndex: 1,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    gap: "1.75rem",
-    minHeight: "190px",
-  },
-  eyebrow: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    width: "fit-content",
-    padding: "0.4rem 0.7rem",
-    border: "1px solid rgba(37, 99, 235, 0.12)",
-    borderRadius: "999px",
-    background: "rgba(255, 255, 255, 0.72)",
-    color: "#2563eb",
-    fontSize: "0.72rem",
-    fontWeight: 800,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-  title: {
-    margin: 0,
-    color: "#0f172a",
-    fontSize: "clamp(2.15rem, 4vw, 3.65rem)",
-    fontWeight: 850,
-    letterSpacing: "-0.06em",
-    lineHeight: 0.95,
-  },
-  subtitle: {
-    maxWidth: "680px",
-    margin: "0.9rem 0 0",
-    color: "#475569",
-    fontSize: "1rem",
-    lineHeight: 1.65,
-  },
-  heroAside: {
-    position: "relative",
-    zIndex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.875rem",
-    alignSelf: "stretch",
-    justifyContent: "space-between",
-  },
-  accountCard: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-    height: "100%",
-    padding: "1rem",
-    border: "1px solid rgba(255, 255, 255, 0.78)",
-    borderRadius: "22px",
-    background: "rgba(255, 255, 255, 0.72)",
-    boxShadow:
-      "inset 0 1px 0 rgba(255,255,255,0.8), 0 18px 48px rgba(15,23,42,0.08)",
-    backdropFilter: "blur(16px)",
-  },
-  statusBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "0.4rem",
-    width: "fit-content",
-    padding: "0.42rem 0.68rem",
-    borderRadius: "999px",
-    background: "rgba(16, 185, 129, 0.12)",
-    color: "#047857",
-    fontSize: "0.72rem",
-    fontWeight: 800,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-  },
-  identity: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.8rem",
-  },
-  avatar: {
-    width: "46px",
-    height: "46px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "16px",
-    background: "linear-gradient(135deg, #0f172a, #334155)",
-    color: "#ffffff",
-    fontWeight: 850,
-  },
-  identityName: {
-    display: "block",
-    maxWidth: "190px",
-    overflow: "hidden",
-    color: "#0f172a",
-    fontSize: "0.95rem",
-    fontWeight: 800,
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  identityMeta: {
-    display: "block",
-    color: "#64748b",
-    fontSize: "0.8rem",
-    fontWeight: 700,
-  },
-  contentGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-    gap: "1.25rem",
-  },
-  panel: {
-    padding: "1.75rem",
-    border: "1px solid #e5e7eb",
-    borderRadius: "24px",
-    background: "#ffffff",
-    boxShadow: "0 18px 46px rgba(15, 23, 42, 0.045)",
-  },
-  sectionKicker: {
-    display: "block",
-    color: "#2563eb",
-    fontSize: "0.7rem",
-    fontWeight: 850,
-    letterSpacing: "0.1em",
-    textTransform: "uppercase",
-  },
-  sectionTitle: {
-    margin: "0.2rem 0 1.25rem",
-    color: "#0f172a",
-    fontSize: "1.1rem",
-    fontWeight: 850,
-    letterSpacing: "-0.025em",
-  },
-  infoList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.85rem",
-  },
-  infoItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.85rem",
-    padding: "1rem",
-    border: "1px solid #eef2f7",
-    borderRadius: "18px",
-    background: "#fbfdff",
-  },
-  iconBox: {
-    width: "42px",
-    height: "42px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "14px",
-  },
-  infoContent: {
-    display: "flex",
-    flexDirection: "column",
-    minWidth: 0,
-  },
-  infoLabel: {
-    color: "#64748b",
-    fontSize: "0.7rem",
-    fontWeight: 800,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-  infoValue: {
-    color: "#0f172a",
-    fontSize: "0.98rem",
-    fontWeight: 850,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    marginTop: "0.15rem",
-  },
-  actionButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "0.4rem",
-    width: "100%",
-    padding: "0.65rem 0.9rem",
-    border: "1px solid #e5e7eb",
-    borderRadius: "14px",
-    background: "#ffffff",
-    color: "#0f172a",
-    fontSize: "0.8125rem",
-    fontWeight: 800,
-    transition: "all 150ms ease",
-    marginTop: "0.5rem",
-    boxShadow: "0 2px 6px rgba(15, 23, 42, 0.04)",
-  },
-} satisfies Record<string, CSSProperties>;
-
 export function ProfileTab({
   session,
   twoFactorEnabled,
@@ -296,11 +67,9 @@ export function ProfileTab({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Profile Modal & Picture states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
-  // 2FA Modal & Setup states
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
   const [twofaPhase, setTwofaPhase] = useState<"idle" | "setup" | "done">("idle");
   const [twofaSetupData, setTwofaSetupData] = useState<TwoFactorSetupResponse | null>(null);
@@ -316,7 +85,6 @@ export function ProfileTab({
       setTimeout(() => twofaCodeInputRef.current?.focus(), 50);
     }
   }, [twofaPhase]);
-
 
   const reset2FAState = () => {
     setTwofaPhase("idle");
@@ -411,7 +179,6 @@ export function ProfileTab({
     setTwofaApiError(null);
   }
 
-  // Sync profile photo
   useEffect(() => {
     const stored = localStorage.getItem(`multempresas.profile_image_${user.email}`);
     if (stored) {
@@ -428,26 +195,6 @@ export function ProfileTab({
       window.removeEventListener("profile-image-updated", handleCustomEvent);
     };
   }, [user.email]);
-
-  const passwordStrength = (pwd: string) => {
-    if (pwd.length === 0) return null;
-    if (pwd.length < 8) return "fraca";
-    const checks = [/[A-Z]/, /[a-z]/, /[0-9]/, /[^A-Za-z0-9]/];
-    const passed = checks.filter((r) => r.test(pwd)).length;
-    if (passed <= 1) return "fraca";
-    if (passed === 2) return "média";
-    if (passed === 3) return "boa";
-    return "forte";
-  };
-
-  const strength = passwordStrength(newPassword);
-
-  const strengthColor: Record<string, string> = {
-    fraca: "#ef4444",
-    média: "#f59e0b",
-    boa: "#3b82f6",
-    forte: "#10b981",
-  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -502,8 +249,7 @@ export function ProfileTab({
 
       setLoading(true);
       try {
-        const res = await changePassword(session.accessToken, currentPassword, newPassword);
-        
+        await changePassword(session.accessToken, currentPassword, newPassword);
         const stored = getSession();
         if (stored) {
           const updated: Session = {
@@ -536,1218 +282,340 @@ export function ProfileTab({
   const roleLabel = ROLE_LABELS[user.role] ?? user.role;
   const accountStatus = user.active !== false ? "Ativa" : "Inativa";
   const userFirstName = user.name.split(" ")[0];
+  const hasMinLength = newPassword.length >= 8;
+  const hasUpperLower = /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword);
+  const hasNumberSpecial = /[0-9]/.test(newPassword) || /[^A-Za-z0-9]/.test(newPassword);
+  const passwordsMatch = newPassword === confirmPassword && confirmPassword !== "";
+  const canViewProfileAudit = ["MASTER", "ADMIN"].includes(user.role);
 
   const profileDetails = [
-    {
-      icon: User,
-      label: "Nome Completo",
-      value: user.name,
-      tone: "blue",
-    },
-    {
-      icon: Mail,
-      label: "Endereço de Email",
-      value: user.email,
-      tone: "purple",
-    },
-    {
-      icon: Activity,
-      label: "Nível de Acesso",
-      value: roleLabel,
-      tone: "blue",
-    },
-    {
-      icon: Shield,
-      label: "Autenticação 2FA",
-      value: user.two_factor_enabled ? "Habilitado" : "Pendente de Ativação",
-      tone: user.two_factor_enabled ? "green" : "yellow",
-    },
-    {
-      icon: Building2,
-      label: "Organização / Empresa",
-      value: company?.name ?? "Administração Global",
-      tone: "green",
-    },
+    { icon: User, label: "Nome Completo", value: user.name },
+    { icon: Mail, label: "Endereço de Email", value: user.email },
+    { icon: Activity, label: "Nível de Acesso", value: roleLabel },
+    { icon: Smartphone, label: "Autenticação 2FA", value: twoFactorEnabled ? "Habilitado" : "Pendente de Ativação" },
+    { icon: Building2, label: "Organização / Empresa", value: company?.name ?? "Administração Global" },
   ];
 
+  const renderAvatar = (sizeClass = "h-12 w-12") => (
+    <div className={cn("relative shrink-0 overflow-hidden rounded-full border border-[#D4AF37]/30 bg-[#0A101D] p-0.5 shadow-[0_0_18px_rgba(212,175,55,0.14)]", sizeClass)}>
+      {profileImage ? (
+        <img src={profileImage} alt={user.name} className="h-full w-full rounded-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-[#D4AF37] to-slate-900 text-sm font-black text-white">
+          {userFirstName.charAt(0).toUpperCase()}
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <section
-      className="tab-section overview-dashboard"
-      style={styles.dashboard}
-      aria-labelledby="profile-tab-title"
-    >
-      {/* Redesigned Premium Hero Card */}
-      <div className="overview-hero-card" style={styles.hero}>
-        <div style={styles.heroContent}>
-          <div style={styles.eyebrow}>
-            <Sparkles size={16} aria-hidden="true" />
-            Configurações da conta
+    <section className="profile-premium-screen relative isolate flex w-full flex-col gap-6 text-white" aria-labelledby="profile-tab-title">
+      <div className="pointer-events-none absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-[#D4AF37]/10 blur-[120px]" />
+      <div className="pointer-events-none absolute -bottom-40 left-1/4 -z-10 h-80 w-80 rounded-full bg-blue-500/[0.04] blur-[120px]" />
+
+      <div className="flex flex-col items-start justify-between gap-6 border-b border-white/5 pb-6 xl:flex-row xl:items-center">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#D4AF37]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_8px_#D4AF37]" />
+            Configurações da Conta
           </div>
-          <div>
-            <h2 id="profile-tab-title" style={styles.title}>
-              Olá, {userFirstName}.
-            </h2>
-            <p style={styles.subtitle}>
-              Gerencie suas informações de perfil, nível de permissões de acesso e mantenha suas credenciais de segurança atualizadas.
-            </p>
-          </div>
+          <h2 id="profile-tab-title" className="text-3xl font-black uppercase italic tracking-tight text-white">
+            Olá, <span className="bg-gradient-to-r from-white via-white to-[#D4AF37] bg-clip-text text-transparent drop-shadow-sm">{user.name}.</span>
+          </h2>
+          <p className="max-w-xl text-xs font-semibold leading-relaxed text-slate-400">
+            Gerencie suas informações de perfil, nível de permissão e mantenha as credenciais corporativas salvas com segurança máxima.
+          </p>
         </div>
 
-        <aside className="overview-hero-aside" style={styles.heroAside}>
-          <div style={styles.accountCard}>
-            <span
-              style={{
-                ...styles.statusBadge,
-                ...(user.active === false
-                  ? {
-                      background: "rgba(239, 68, 68, 0.12)",
-                      color: "#dc2626",
-                    }
-                  : null),
-              }}
-            >
-              <CheckCircle2 size={15} aria-hidden="true" />
-              Conta {accountStatus}
-            </span>
-            <div style={styles.identity} aria-label="Usuário logado">
-              <div style={{ ...styles.avatar, overflow: "hidden" }} aria-hidden="true">
-                {profileImage ? (
-                  <img src={profileImage} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : (
-                  userFirstName.charAt(0).toUpperCase()
-                )}
-              </div>
-              <div>
-                <strong style={styles.identityName}>{user.name}</strong>
-                <span style={styles.identityMeta}>{roleLabel}</span>
-              </div>
+        <div className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-[#090D15]/90 p-4 shadow-xl backdrop-blur-xl sm:w-auto">
+          {renderAvatar("h-11 w-11")}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Status da Conta</span>
+              <span className={cn("rounded border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider", user.active === false ? "border-rose-500/20 bg-rose-500/10 text-rose-400" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400")}>
+                {user.active === false ? "INATIVO" : "ATIVO"}
+              </span>
             </div>
+            <p className="mt-0.5 truncate text-xs font-bold uppercase tracking-wide text-white">{user.name}</p>
           </div>
-        </aside>
+        </div>
       </div>
 
+      {(error || success || twofaApiError || twofaSuccessMsg) && !isModalOpen && !is2FAModalOpen && (
+        <div className={cn(
+          "flex items-center justify-between rounded-xl border p-4 text-xs font-bold",
+          error || twofaApiError
+            ? "border-rose-500/20 bg-rose-950/20 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.05)]"
+            : "border-emerald-500/20 bg-emerald-950/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.05)]"
+        )}>
+          <div className="flex items-center gap-3">
+            {error || twofaApiError ? <X size={16} className="text-rose-500" aria-hidden="true" /> : <CheckCircle2 size={16} className="text-emerald-500" aria-hidden="true" />}
+            <span>{error ?? twofaApiError ?? success ?? twofaSuccessMsg}</span>
+          </div>
+          <button type="button" onClick={() => { setError(null); setSuccess(null); setTwofaApiError(null); setTwofaSuccessMsg(null); }} className="text-[10px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-white">
+            Fechar
+          </button>
+        </div>
+      )}
 
-      {/* Main content split grid */}
-      <div className="overview-content-grid" style={styles.contentGrid}>
-        {/* First Column: User Details Panel (Sessão) */}
-        <aside style={styles.panel} aria-labelledby="profile-details-title">
-          <span style={styles.sectionKicker}>Sessão</span>
-          <h3 id="profile-details-title" style={styles.sectionTitle}>
-            Detalhes do perfil
-          </h3>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <aside className="premium-profile-card rounded-2xl" aria-labelledby="profile-details-title">
+            <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-4">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#D4AF37]">Sessão</span>
+                <h3 id="profile-details-title" className="mt-0.5 text-lg font-black uppercase tracking-tight text-white">Detalhes do perfil</h3>
+              </div>
+              <User size={18} className="text-slate-600" aria-hidden="true" />
+            </div>
 
-          <div style={styles.infoList} role="list">
-            {profileDetails.map(({ icon: Icon, label, value, tone }) => {
-              const toneStyle = TONE_STYLES[tone];
-              return (
-                <article key={label} style={styles.infoItem} role="listitem">
-                  <div
-                    style={{
-                      ...styles.iconBox,
-                      background: toneStyle.bg,
-                      color: toneStyle.color,
-                    }}
-                    aria-hidden="true"
-                  >
-                    <Icon size={20} />
+            <div className="space-y-3.5" role="list">
+              {profileDetails.map(({ icon: Icon, label, value }) => (
+                <article key={label} className="flex items-center gap-3.5 rounded-xl border border-white/5 bg-white/[0.01] p-2.5" role="listitem">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#D4AF37]/10 bg-[#D4AF37]/5 text-[#D4AF37]">
+                    <Icon size={16} aria-hidden="true" />
                   </div>
-                  <div style={styles.infoContent}>
-                    <span style={styles.infoLabel}>{label}</span>
-                    <strong style={styles.infoValue} title={value}>
-                      {value}
-                    </strong>
+                  <div className="min-w-0 overflow-hidden">
+                    <p className="text-[8px] font-black uppercase leading-none tracking-widest text-slate-500">{label}</p>
+                    <p className="mt-1 truncate text-xs font-bold text-white" title={value}>{value}</p>
                   </div>
                 </article>
-              );
-            })}
-          </div>
-
-        </aside>
-
-        {/* Second Column: Security Info Card */}
-        <section
-          style={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "1.5rem",
-            border: "1px solid #eef2f6",
-            borderRadius: "22px",
-            background: "#ffffff",
-            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.03)",
-            transition: "all 0.2s ease",
-          }}
-          className="table-row-hover"
-          aria-labelledby="security-info-title"
-        >
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div>
-              <h4 id="security-info-title" style={{ margin: 0, fontWeight: 800, color: "#0f172a", fontSize: "1.25rem" }}>
-                Segurança
-              </h4>
-              <strong
-                style={{
-                  fontSize: "2.2rem",
-                  fontWeight: 850,
-                  color: user.must_change_password ? "#dc2626" : "#7c3aed",
-                  letterSpacing: "-0.04em",
-                  marginTop: "0.5rem",
-                  display: "block",
-                }}
-              >
-                {user.must_change_password ? "Alerta" : "Forte"}
-              </strong>
+              ))}
             </div>
-            <div>
-              {user.must_change_password ? (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "0.32rem 0.65rem",
-                    borderRadius: "999px",
-                    fontSize: "0.72rem",
-                    fontWeight: 850,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    background: "rgba(239, 68, 68, 0.08)",
-                    border: "1px solid rgba(239, 68, 68, 0.18)",
-                    color: "#dc2626",
-                  }}
-                >
-                  Atenção
-                </span>
-              ) : (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "0.32rem 0.65rem",
-                    borderRadius: "999px",
-                    fontSize: "0.72rem",
-                    fontWeight: 850,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    background: "rgba(16, 185, 129, 0.08)",
-                    border: "1px solid rgba(16, 185, 129, 0.18)",
-                    color: "#059669",
-                  }}
-                >
-                  Seguro
-                </span>
-              )}
-            </div>
-          </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "1rem", marginBottom: "1rem" }}>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem", lineHeight: "1.4" }}>
-              {user.must_change_password
-                ? "Sua conta está usando uma senha provisória e necessita de alteração imediata."
-                : "Sua senha atende a todas as diretrizes de segurança da plataforma."}
+            <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-6">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Sessão Segura Ativa</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+            </div>
+          </aside>
+
+          <section className="premium-profile-card rounded-2xl" aria-labelledby="security-info-title">
+            <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-4">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-500">Segurança</span>
+                <h3 id="security-info-title" className="mt-0.5 text-lg font-black uppercase tracking-tight text-white">{user.must_change_password ? "Alerta" : "Forte"}</h3>
+              </div>
+              <span className={cn("rounded border px-2 py-0.5 text-[8px] font-black uppercase tracking-wider", user.must_change_password ? "border-amber-500/20 bg-amber-500/10 text-amber-400" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400")}>
+                {user.must_change_password ? "Atenção" : "Seguro"}
+              </span>
+            </div>
+
+            <p className="mb-6 text-xs font-bold leading-relaxed text-slate-400">
+              {user.must_change_password ? "Sua conta está utilizando uma senha provisória e necessita de alteração imediata." : "Sua conta está com credenciais atualizadas e protegidas pelas diretrizes Verytas."}
             </p>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.35rem",
-                marginTop: "0.75rem",
-                paddingTop: "0.75rem",
-                borderTop: "1px solid #f1f5f9",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.68rem",
-                  fontWeight: 800,
-                  color: "#94a3b8",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  marginBottom: "0.15rem",
-                }}
-              >
-                Diretrizes de Segurança:
-              </span>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
-                <span>Mínimo 8 caracteres</span>
-              </div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
-                <span>Letras maiúsculas & minúsculas</span>
-              </div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
-                <span>Números & caracteres especiais</span>
-              </div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
-                <span>Autenticação 2FA ativada</span>
-              </div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
-                <span>Foto de perfil para auditoria</span>
-              </div>
+            <div className="space-y-3">
+              <span className="block text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Diretrizes de Segurança:</span>
+              {["Mínimo 8 caracteres", "Letras maiúsculas & minúsculas", "Números & caracteres especiais", twoFactorEnabled ? "Autenticação 2FA ativada" : "Autenticação 2FA pendente", profileImage ? "Foto de perfil para auditoria" : "Foto de perfil recomendada"].map((item) => (
+                <div key={item} className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
+                  <CheckCircle2 size={14} className="shrink-0 text-[#D4AF37]" aria-hidden="true" />
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
-          </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderTop: "1px solid #f1f5f9",
-              paddingTop: "1rem",
-              marginTop: "auto",
-              gap: "0.5rem",
-            }}
-          >
-            <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 700 }}>
-              Dados de Acesso
-            </span>
-            <button
-              type="button"
-              className="secondary-button"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.45rem 0.85rem",
-                borderRadius: "10px",
-                fontSize: "0.78rem",
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-              onClick={() => setIsModalOpen(true)}
-            >
-              <Edit2 size={13} aria-hidden="true" />
-              Editar Cadastro
-            </button>
-          </div>
-        </section>
-
-        {/* Right Column: 2FA Card (Plan Card Style) */}
-        <section
-          style={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "1.5rem",
-            border: "1px solid #eef2f6",
-            borderRadius: "22px",
-            background: "#ffffff",
-            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.03)",
-            transition: "all 0.2s ease",
-          }}
-          className="table-row-hover"
-          aria-labelledby="twofa-card-title"
-        >
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div>
-              <h4 id="twofa-card-title" style={{ margin: 0, fontWeight: 800, color: "#0f172a", fontSize: "1.25rem" }}>
-                2FA
-              </h4>
-              <strong
-                style={{
-                  fontSize: "2.2rem",
-                  fontWeight: 850,
-                  color: twoFactorEnabled ? "#059669" : "#f59e0b",
-                  letterSpacing: "-0.04em",
-                  marginTop: "0.5rem",
-                  display: "block",
-                }}
-              >
-                {twoFactorEnabled ? "Ativo" : "Inativo"}
-              </strong>
+            <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/5 pt-6">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Dados de Acesso</span>
+              <button type="button" className="premium-action-button" onClick={() => setIsModalOpen(true)}>
+                <KeyRound size={12} aria-hidden="true" />
+                Alterar Senha
+              </button>
             </div>
-            <div>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "0.32rem 0.65rem",
-                  borderRadius: "999px",
-                  fontSize: "0.72rem",
-                  fontWeight: 850,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  background: twoFactorEnabled ? "rgba(16, 185, 129, 0.08)" : "rgba(245, 158, 11, 0.1)",
-                  border: twoFactorEnabled ? "1px solid rgba(16, 185, 129, 0.18)" : "1px solid rgba(245, 158, 11, 0.25)",
-                  color: twoFactorEnabled ? "#059669" : "#b45309",
-                }}
-              >
+          </section>
+
+          <section className="premium-profile-card rounded-2xl" aria-labelledby="twofa-card-title">
+            <div className="mb-6 flex items-center justify-between border-b border-white/5 pb-4">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-emerald-500">2FA</span>
+                <h3 id="twofa-card-title" className="mt-0.5 text-lg font-black uppercase tracking-tight text-white">{twoFactorEnabled ? "Ativo" : "Inativo"}</h3>
+              </div>
+              <span className={cn("rounded border px-2 py-0.5 text-[8px] font-black uppercase tracking-wider", twoFactorEnabled ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-amber-500/20 bg-amber-500/10 text-amber-400")}>
                 {twoFactorEnabled ? "Habilitado" : "Pendente"}
               </span>
             </div>
-          </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "1rem", marginBottom: "1rem" }}>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem", lineHeight: "1.4" }}>
-              {twoFactorEnabled
-                ? "Sua conta está protegida com autenticação em dois fatores (TOTP)."
-                : "Recomendamos ativar o 2FA para proteger sua conta com uma camada extra."}
+            <p className="mb-6 text-xs font-bold leading-relaxed text-slate-400">
+              {twoFactorEnabled ? "Sua conta está devidamente protegida com autenticação em dois fatores (TOTP)." : "Configure a autenticação em dois fatores para elevar a segurança do acesso."}
             </p>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.35rem",
-                marginTop: "0.75rem",
-                paddingTop: "0.75rem",
-                borderTop: "1px solid #f1f5f9",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.68rem",
-                  fontWeight: 800,
-                  color: "#94a3b8",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  marginBottom: "0.15rem",
-                }}
-              >
-                Aplicativos Suportados:
-              </span>
+            <div className="space-y-3">
+              <span className="block text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Aplicativos Suportados:</span>
               {["Google Authenticator", "Microsoft Authenticator", "Authy", "1Password", "Qualquer app TOTP"].map((app) => (
-                <div key={app} style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                  <span style={{ color: twoFactorEnabled ? "#059669" : "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
+                <div key={app} className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
+                  <CheckCircle2 size={14} className="shrink-0 text-emerald-400" aria-hidden="true" />
                   <span>{app}</span>
                 </div>
               ))}
             </div>
-          </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderTop: "1px solid #f1f5f9",
-              paddingTop: "1rem",
-              marginTop: "auto",
-              gap: "0.5rem",
-            }}
-          >
-            <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 700 }}>
-              Autenticação 2FA
-            </span>
-            <button
-              type="button"
-              className="secondary-button"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.45rem 0.85rem",
-                borderRadius: "10px",
-                fontSize: "0.78rem",
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-              onClick={() => { reset2FAState(); setIs2FAModalOpen(true); }}
-            >
-              <Shield size={13} aria-hidden="true" />
-              {twoFactorEnabled ? "Gerenciar" : "Configurar"}
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {/* Auditoria Card (Visible for MASTER and ADMIN) */}
-      {["MASTER", "ADMIN"].includes(user.role) && (
-        <section
-          style={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "1.5rem",
-            border: "1px solid #eef2f6",
-            borderRadius: "22px",
-            background: "#ffffff",
-            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.03)",
-            transition: "all 0.2s ease",
-            marginTop: "1.25rem",
-          }}
-            className="table-row-hover"
-            aria-labelledby="audit-card-title"
-          >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div>
-                <h4 id="audit-card-title" style={{ margin: 0, fontWeight: 800, color: "#0f172a", fontSize: "1.25rem" }}>
-                  Auditoria
-                </h4>
-                <strong
-                  style={{
-                    fontSize: "2.2rem",
-                    fontWeight: 850,
-                    color: "#0f172a",
-                    letterSpacing: "-0.04em",
-                    marginTop: "0.5rem",
-                    display: "block",
-                  }}
-                >
-                  Logs
-                </strong>
-              </div>
-              <div>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "0.32rem 0.65rem",
-                    borderRadius: "999px",
-                    fontSize: "0.72rem",
-                    fontWeight: 850,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    background: "rgba(15, 23, 42, 0.06)",
-                    border: "1px solid rgba(15, 23, 42, 0.1)",
-                    color: "#475569",
-                  }}
-                >
-                  Rastreabilidade
-                </span>
-              </div>
+            <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/5 pt-6">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Autenticação 2FA</span>
+              <button type="button" className="premium-action-button" onClick={() => { reset2FAState(); setIs2FAModalOpen(true); }}>
+                <Smartphone size={12} aria-hidden="true" />
+                {twoFactorEnabled ? "Gerenciar" : "Configurar"}
+              </button>
             </div>
+          </section>
+        </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "1rem", marginBottom: "1rem" }}>
-              <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem", lineHeight: "1.4" }}>
-                Acompanhe o histórico de acessos, alterações e ações executadas por todos os usuários do sistema em tempo real.
-              </p>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.35rem",
-                  marginTop: "0.75rem",
-                  paddingTop: "0.75rem",
-                  borderTop: "1px solid #f1f5f9",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "0.68rem",
-                    fontWeight: 800,
-                    color: "#94a3b8",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    marginBottom: "0.15rem",
-                  }}
-                >
-                  Recursos Monitorados:
-                </span>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                  <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
-                  <span>Tentativas e logs de Login</span>
-                </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                  <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
-                  <span>Criação e edição de usuários</span>
-                </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#334155", fontWeight: 650 }}>
-                  <span style={{ color: "#7c3aed", fontSize: "0.85rem", fontWeight: "bold" }}>✓</span>
-                  <span>Alterações em planos e empresas</span>
-                </div>
+        {canViewProfileAudit ? (
+          <section className="premium-profile-card rounded-2xl" aria-labelledby="audit-card-title">
+            <div className="mb-6 flex flex-col justify-between gap-4 border-b border-white/5 pb-4 md:flex-row md:items-center">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-blue-500">Auditoria</span>
+                <h3 id="audit-card-title" className="mt-1 text-2xl font-black uppercase italic tracking-tight text-white">Logs</h3>
+                <p className="mt-2 text-xs font-bold text-slate-400">
+                  Acompanhe o histórico de acessos, alterações e ações executadas por todos os usuários do sistema em tempo real.
+                </p>
               </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderTop: "1px solid #f1f5f9",
-                paddingTop: "1rem",
-                marginTop: "auto",
-                gap: "0.5rem",
-              }}
-            >
-              <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 700 }}>
-                Logs do Sistema
+              <span className="w-fit rounded border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-blue-400">
+                Rastreabilidade
               </span>
-              <button
-                type="button"
-                className="secondary-button"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.4rem",
-                  padding: "0.45rem 0.85rem",
-                  borderRadius: "10px",
-                  fontSize: "0.78rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
-                onClick={() => onNavigate("audit")}
-              >
-                <Activity size={13} aria-hidden="true" />
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="space-y-3">
+                <span className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Recursos Monitorados:</span>
+                {["Tentativas e logs de Login", "Criação e edição de usuários", "Alterações em planos e empresas"].map((item) => (
+                  <div key={item} className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
+                    <span className="text-sm text-[#D4AF37]">✓</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col justify-center space-y-1.5 rounded-xl border border-white/5 bg-white/[0.01] p-4">
+                <div className="flex items-center justify-between gap-4 text-xs">
+                  <span className="font-bold text-slate-500">Monitorando porta:</span>
+                  <span className="font-mono font-bold text-slate-300">TLS 1.3 / Port 443</span>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-xs">
+                  <span className="font-bold text-slate-500">Assinatura Digital:</span>
+                  <span className="font-mono font-black text-[#D4AF37]">VERYTAS-SHA256</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-6">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Logs do Sistema</span>
+              <button type="button" className="premium-action-button" onClick={() => onNavigate("audit")}>
+                <ArrowUpRight size={12} aria-hidden="true" />
                 Visualizar Logs
               </button>
             </div>
           </section>
-        )}
+        ) : null}
+      </div>
 
-      {/* Modern Dialog/Modal Overlay */}
       {isModalOpen && (
-        <div className="modal-backdrop" onClick={handleCloseModal} style={{ zIndex: 100 }}>
-          <div
-            className="modal"
-            style={{ width: "min(100%, 500px)", padding: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal__header">
-              <h4 className="modal__title">Editar Cadastro & Senha</h4>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={handleCloseModal}
-                aria-label="Fechar"
-                style={{ border: "none", background: "transparent" }}
-              >
-                <X size={18} />
-              </button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#010204]/90 p-4 backdrop-blur-md" onClick={handleCloseModal}>
+          <div className="max-h-[92vh] w-full max-w-lg overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-[#080C14] shadow-[0_0_50px_rgba(212,175,55,0.15)]" onClick={(e) => e.stopPropagation()}>
+            <div className="h-1 bg-gradient-to-r from-[#AA841C] via-[#D4AF37] to-[#AA841C]" />
+            <div className="flex items-center justify-between border-b border-white/5 bg-[#05080F] px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]"><KeyRound size={16} aria-hidden="true" /></div>
+                <div><h4 className="text-sm font-black uppercase tracking-wider text-white">Alterar Senha de Acesso</h4><p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Cofre de segurança Verytas</p></div>
+              </div>
+              <button type="button" className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-400 transition-colors hover:text-white" onClick={handleCloseModal} aria-label="Fechar"><X size={16} /></button>
             </div>
-
             <form onSubmit={handleSubmit} noValidate>
-              <div
-                className="modal__body"
-                style={{
-                  maxHeight: "calc(80vh - 140px)",
-                  overflowY: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1.25rem",
-                  padding: "1.5rem",
-                }}
-              >
-                {/* Error/Success alerts inside the modal */}
-                {error && (
-                  <div className="form-alert" role="alert" style={{ margin: 0 }}>
-                    {error}
-                  </div>
-                )}
+              <div className="max-h-[calc(92vh-145px)] space-y-5 overflow-y-auto p-6">
+                {error && <div className="rounded-xl border border-rose-500/20 bg-rose-950/20 p-3 text-xs font-bold text-rose-400" role="alert">{error}</div>}
+                {success && <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-3 text-xs font-bold text-emerald-400" role="status"><CheckCircle2 size={16} />{success}</div>}
 
-                {success && (
-                  <div
-                    role="status"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.6rem",
-                      padding: "0.85rem 1rem",
-                      borderRadius: "12px",
-                      background: "rgba(16, 185, 129, 0.1)",
-                      border: "1px solid rgba(16, 185, 129, 0.25)",
-                      color: "#047857",
-                      fontWeight: 700,
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    <CheckCircle2 size={18} aria-hidden="true" />
-                    {success}
-                  </div>
-                )}
-
-                {/* Profile Photo Uploader */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
-                  <span style={{ fontSize: "0.8125rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Foto do perfil
-                  </span>
-                  
-                  <div style={{ position: "relative" }}>
-                    <div
-                      style={{
-                        width: "90px",
-                        height: "90px",
-                        borderRadius: "50%",
-                        background: "linear-gradient(135deg, #0f172a, #334155)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#fff",
-                        fontSize: "2.25rem",
-                        fontWeight: 850,
-                        overflow: "hidden",
-                        border: "3px solid #f1f5f9",
-                        boxShadow: "0 4px 14px rgba(15,23,42,0.15)",
-                      }}
-                    >
-                      {profileImage ? (
-                        <img src={profileImage} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      ) : (
-                        userFirstName.charAt(0).toUpperCase()
-                      )}
-                    </div>
-
-                    <label
-                      htmlFor="photo-upload-dialog"
-                      style={{
-                        position: "absolute",
-                        bottom: "0",
-                        right: "0",
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "50%",
-                        background: "#2563eb",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(37,99,235,0.4)",
-                        border: "2px solid #fff",
-                        transition: "transform 150ms ease",
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.15)"}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                      title="Upload de foto"
-                    >
-                      <Camera size={13} />
+                <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/5 bg-[#030508] p-5">
+                  {renderAvatar("h-24 w-24")}
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <label className="premium-action-button cursor-pointer">
+                      <Camera size={13} aria-hidden="true" />
+                      Alterar Foto
+                      <input type="file" accept="image/*" className="sr-only" onChange={handlePhotoUpload} />
                     </label>
-                    <input
-                      id="photo-upload-dialog"
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      style={{ display: "none" }}
-                    />
+                    {profileImage && (
+                      <button type="button" className="premium-danger-button" onClick={handleRemovePhoto}>
+                        <Trash2 size={13} aria-hidden="true" />
+                        Remover
+                      </button>
+                    )}
                   </div>
-
-                  {profileImage && (
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "#ef4444",
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        padding: "0.25rem 0.5rem",
-                      }}
-                    >
-                      <Trash2 size={12} />
-                      Remover foto
-                    </button>
-                  )}
+                  <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-600">JPG/PNG até 2MB</p>
                 </div>
 
-                <hr style={{ border: "0", borderTop: "1px solid #eef2f6", margin: "0.25rem 0" }} />
-
-                {/* Password Fields Title Banner */}
-                <span style={{ fontSize: "0.8125rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "-0.25rem" }}>
-                  Alterar senha de acesso (Opcional)
-                </span>
-
-                {/* Current password */}
-                <div className="field-group">
-                  <label htmlFor="current-password-dialog">Senha atual</label>
-                  <div className="input-shell">
-                    <KeyRound aria-hidden="true" className="input-icon" size={18} />
-                    <input
-                      id="current-password-dialog"
-                      className="form-input password-input"
-                      type={showCurrent ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) => { setCurrentPassword(e.target.value); setError(null); }}
-                      placeholder="Sua senha atual"
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      aria-label={showCurrent ? "Ocultar senha atual" : "Mostrar senha atual"}
-                      onClick={() => setShowCurrent((v) => !v)}
-                    >
-                      {showCurrent ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
-                    </button>
-                  </div>
+                <div className="grid gap-4">
+                  <div className="field-group dark-field"><label htmlFor="current-password-dialog">Senha atual</label><div className="input-shell"><KeyRound aria-hidden="true" className="input-icon" size={18} /><input id="current-password-dialog" className="form-input password-input" type={showCurrent ? "text" : "password"} value={currentPassword} onChange={(e) => { setCurrentPassword(e.target.value); setError(null); }} placeholder="Sua senha atual" autoComplete="current-password" /><button type="button" className="password-toggle" aria-label={showCurrent ? "Ocultar senha atual" : "Mostrar senha atual"} onClick={() => setShowCurrent((v) => !v)}>{showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
+                  <div className="field-group dark-field"><label htmlFor="new-password-dialog">Nova senha</label><div className="input-shell"><KeyRound aria-hidden="true" className="input-icon" size={18} /><input id="new-password-dialog" className="form-input password-input" type={showNew ? "text" : "password"} value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setError(null); }} placeholder="Mínimo 8 caracteres" autoComplete="new-password" minLength={8} /><button type="button" className="password-toggle" aria-label={showNew ? "Ocultar nova senha" : "Mostrar nova senha"} onClick={() => setShowNew((v) => !v)}>{showNew ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
+                  <div className="field-group dark-field"><label htmlFor="confirm-password-dialog">Confirmar nova senha</label><div className="input-shell"><KeyRound aria-hidden="true" className="input-icon" size={18} /><input id="confirm-password-dialog" className={cn("form-input", confirmPassword && confirmPassword !== newPassword && "input-error")} type="password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }} placeholder="Repita a nova senha" autoComplete="new-password" /></div></div>
                 </div>
 
-                {/* New password */}
-                <div className="field-group">
-                  <label htmlFor="new-password-dialog">Nova senha</label>
-                  <div className="input-shell">
-                    <KeyRound aria-hidden="true" className="input-icon" size={18} />
-                    <input
-                      id="new-password-dialog"
-                      className="form-input password-input"
-                      type={showNew ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => { setNewPassword(e.target.value); setError(null); }}
-                      placeholder="Mínimo 8 caracteres"
-                      autoComplete="new-password"
-                      minLength={8}
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      aria-label={showNew ? "Ocultar nova senha" : "Mostrar nova senha"}
-                      onClick={() => setShowNew((v) => !v)}
-                    >
-                      {showNew ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
-                    </button>
-                  </div>
-
-                  {/* Password strength */}
-                  {strength && (
-                    <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <div style={{ flex: 1, height: "5px", borderRadius: "999px", background: "#e5e7eb", overflow: "hidden" }}>
-                        <div
-                          style={{
-                            height: "100%",
-                            borderRadius: "999px",
-                            background: strengthColor[strength],
-                            width: strength === "fraca" ? "25%" : strength === "média" ? "50%" : strength === "boa" ? "75%" : "100%",
-                            transition: "width 0.3s ease, background 0.3s ease",
-                          }}
-                        />
-                      </div>
-                      <span style={{ fontSize: "0.72rem", fontWeight: 800, color: strengthColor[strength], textTransform: "capitalize" }}>
-                        Senha {strength}
-                      </span>
+                <div className="space-y-2 rounded-xl border border-white/5 bg-[#030508] p-3.5">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-slate-600">Status de criptografia:</span>
+                  {[
+                    { ok: hasMinLength, text: "Mínimo de 8 caracteres" },
+                    { ok: hasUpperLower, text: "Letras maiúsculas & minúsculas" },
+                    { ok: hasNumberSpecial, text: "Pelo menos um número ou caractere especial" },
+                    { ok: passwordsMatch, text: "Confirmação correspondente" },
+                  ].map(({ ok, text }) => (
+                    <div key={text} className="flex items-center gap-2 text-[11px] font-semibold">
+                      <CheckCircle2 size={14} className={ok ? "text-emerald-400" : "text-slate-700"} />
+                      <span className={ok ? "text-slate-300" : "text-slate-500"}>{text}</span>
                     </div>
-                  )}
-                </div>
-
-                {/* Confirm password */}
-                <div className="field-group">
-                  <label htmlFor="confirm-password-dialog">Confirmar nova senha</label>
-                  <div className="input-shell">
-                    <KeyRound aria-hidden="true" className="input-icon" size={18} />
-                    <input
-                      id="confirm-password-dialog"
-                      className={cn("form-input", confirmPassword && confirmPassword !== newPassword && "input-error")}
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }}
-                      placeholder="Repita a nova senha"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                  {confirmPassword && confirmPassword !== newPassword && (
-                    <p role="alert" style={{ color: "#ef4444", fontSize: "0.78rem", marginTop: "0.3rem" }}>
-                      As senhas não coincidem.
-                    </p>
-                  )}
+                  ))}
                 </div>
               </div>
-
-              <div className="modal__footer" style={{ background: "#f8fafc" }}>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={handleCloseModal}
-                  disabled={loading}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="primary-button"
-                  style={{ minWidth: "140px" }}
-                  disabled={
-                    loading ||
-                    // Disable if they typed in password fields but validation failed
-                    ( !!(currentPassword || newPassword || confirmPassword) &&
-                      (!currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 8) )
-                  }
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 size={14} className="spinner" aria-hidden="true" />
-                      Salvando…
-                    </>
-                  ) : (
-                    "Salvar Alterações"
-                  )}
-                </button>
+              <div className="flex flex-col-reverse gap-3 border-t border-white/5 bg-[#05080F] p-6 sm:flex-row">
+                <button type="button" className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-wider text-white transition-all hover:bg-white/10" onClick={handleCloseModal} disabled={loading}>Cancelar</button>
+                <button type="submit" className="flex-1 rounded-xl bg-[#D4AF37] py-3 text-xs font-black uppercase tracking-wider text-black transition-all hover:bg-white disabled:opacity-60" disabled={loading || (!!(currentPassword || newPassword || confirmPassword) && (!currentPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 8))}>{loading ? <><Loader2 size={14} className="spinner inline" /> Salvando…</> : "Salvar Alterações"}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modern Dialog/Modal Overlay for 2FA */}
       {is2FAModalOpen && (
-        <div className="modal-backdrop" onClick={handleClose2FAModal} style={{ zIndex: 100 }}>
-          <div
-            className="modal"
-            style={{ width: "min(100%, 500px)", padding: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal__header">
-              <h4 className="modal__title">
-                {twoFactorEnabled ? "Desabilitar Autenticação 2FA" : "Configurar Autenticação 2FA"}
-              </h4>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={handleClose2FAModal}
-                aria-label="Fechar"
-                style={{ border: "none", background: "transparent" }}
-              >
-                <X size={18} />
-              </button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#010204]/90 p-4 backdrop-blur-md" onClick={handleClose2FAModal}>
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-[#080C14] shadow-[0_0_50px_rgba(212,175,55,0.15)]" onClick={(e) => e.stopPropagation()}>
+            <div className="h-1 bg-gradient-to-r from-[#AA841C] via-[#D4AF37] to-[#AA841C]" />
+            <div className="flex items-center justify-between border-b border-white/5 bg-[#05080F] px-6 py-5">
+              <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]"><Shield size={16} aria-hidden="true" /></div><div><h4 className="text-sm font-black uppercase tracking-wider text-white">{twoFactorEnabled ? "Desabilitar Autenticação 2FA" : "Configurar Autenticação 2FA"}</h4><p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Conexão redundante TOTP</p></div></div>
+              <button type="button" className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-400 transition-colors hover:text-white" onClick={handleClose2FAModal} aria-label="Fechar"><X size={16} /></button>
             </div>
+            <div className="space-y-5 p-6">
+              {twofaApiError && twofaPhase !== "setup" && <div className="rounded-xl border border-rose-500/20 bg-rose-950/20 p-3 text-xs font-bold text-rose-400" role="alert">{twofaApiError}</div>}
+              {twofaSuccessMsg && <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-3 text-xs font-bold text-emerald-400" role="status"><CheckCircle2 size={16} />{twofaSuccessMsg}</div>}
 
-            <div
-              className="modal__body"
-              style={{
-                maxHeight: "calc(80vh - 140px)",
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.25rem",
-                padding: "1.5rem",
-              }}
-            >
-              {twofaApiError && (
-                <div className="form-alert" role="alert" style={{ margin: 0 }}>
-                  {twofaApiError}
-                </div>
-              )}
-
-              {twofaSuccessMsg && (
-                <div
-                  role="status"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.6rem",
-                    padding: "0.85rem 1rem",
-                    borderRadius: "12px",
-                    background: "rgba(16, 185, 129, 0.1)",
-                    border: "1px solid rgba(16, 185, 129, 0.25)",
-                    color: "#047857",
-                    fontWeight: 700,
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <CheckCircle2 size={18} aria-hidden="true" />
-                  {twofaSuccessMsg}
-                </div>
-              )}
-
-              {/* Habilitado: Confirmar desativação */}
               {twoFactorEnabled && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem", textAlign: "center", alignItems: "center" }}>
-                  <div
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      borderRadius: "50%",
-                      background: "rgba(239, 68, 68, 0.1)",
-                      color: "#dc2626",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    <ShieldOff size={28} />
-                  </div>
-                  <p style={{ margin: 0, color: "#334155", fontSize: "0.95rem", lineHeight: "1.5" }}>
-                    Tem certeza de que deseja desabilitar a Autenticação em Duas Etapas?
-                  </p>
-                  <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem", lineHeight: "1.4" }}>
-                    Sua conta ficará protegida apenas por senha. Isso reduz significativamente a segurança do seu acesso.
-                  </p>
+                <div className="space-y-5 text-center">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"><ShieldCheck size={30} aria-hidden="true" /></div>
+                  <p className="text-sm font-semibold leading-relaxed text-slate-300">A autenticação em dois fatores está ativa. Desabilitar reduz a segurança do seu acesso.</p>
+                  <button type="button" className="premium-danger-button w-full justify-center py-3" onClick={handleDisable2FA} disabled={twofaLoading}>{twofaLoading ? <Loader2 size={14} className="spinner" /> : <ShieldOff size={14} />} Desabilitar 2FA</button>
                 </div>
               )}
 
-              {/* Desabilitado e fase idle */}
               {!twoFactorEnabled && twofaPhase === "idle" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem", textAlign: "center", alignItems: "center" }}>
-                  <div
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      borderRadius: "50%",
-                      background: "rgba(37, 99, 235, 0.1)",
-                      color: "#2563eb",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    <QrCode size={28} />
-                  </div>
-                  <p style={{ margin: 0, color: "#334155", fontSize: "0.95rem", lineHeight: "1.5" }}>
-                    Adicione uma camada extra de proteção à sua conta usando um aplicativo autenticador (Google Authenticator, Authy, Microsoft Authenticator, etc.).
-                  </p>
-                  <button
-                    type="button"
-                    className="primary-button"
-                    style={{ width: "100%", marginTop: "0.5rem" }}
-                    onClick={handleSetup2FA}
-                    disabled={twofaLoading || Boolean(twofaSetupData)}
-                  >
-                    {twofaLoading ? (
-                      <>
-                        <Loader2 size={14} className="spinner" aria-hidden="true" />
-                        Iniciando…
-                      </>
-                    ) : (
-                      <>
-                        <Shield size={14} aria-hidden="true" style={{ marginRight: "0.4rem" }} />
-                        Iniciar Configuração
-                      </>
-                    )}
-                  </button>
+                <div className="space-y-5 text-center">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]"><QrCode size={30} aria-hidden="true" /></div>
+                  <p className="text-sm font-semibold leading-relaxed text-slate-300">Adicione uma camada extra de proteção usando Google Authenticator, Authy, Microsoft Authenticator ou outro app TOTP.</p>
+                  <button type="button" className="w-full rounded-xl bg-[#D4AF37] py-3 text-xs font-black uppercase tracking-wider text-black transition-all hover:bg-white disabled:opacity-60" onClick={handleSetup2FA} disabled={twofaLoading || Boolean(twofaSetupData)}>{twofaLoading ? <><Loader2 size={14} className="spinner inline" /> Iniciando…</> : "Iniciar Configuração"}</button>
                 </div>
               )}
 
-              {/* Desabilitado e fase setup */}
-              {twofaPhase === "setup" && twofaApiError && (
-                <div className="form-alert" role="alert" style={{ margin: 0, marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
-                  <span style={{ flex: 1 }}>{twofaApiError}</span>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={handleRetry2FA}
-                    disabled={twofaLoading}
-                    style={{ minWidth: "140px", flexShrink: 0 }}
-                  >
-                    Tentar Novamente
-                  </button>
-                </div>
-              )}
+              {twofaPhase === "setup" && twofaApiError && <div className="flex flex-col gap-3 rounded-xl border border-rose-500/20 bg-rose-950/20 p-3 text-xs font-bold text-rose-400" role="alert"><span>{twofaApiError}</span><button type="button" className="premium-action-button justify-center" onClick={handleRetry2FA} disabled={twofaLoading}>Tentar Novamente</button></div>}
 
               {!twoFactorEnabled && twofaPhase === "setup" && twofaSetupData && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                  <div
-                    role="region"
-                    aria-label="Dica de sincronização"
-                    style={{
-                      padding: "0.75rem 1rem",
-                      borderRadius: "8px",
-                      background: "rgba(59, 130, 246, 0.08)",
-                      border: "1px solid rgba(59, 130, 246, 0.2)",
-                      color: "#1e40af",
-                      fontSize: "0.8rem",
-                      lineHeight: "1.4",
-                    }}
-                  >
-                    <strong>💡 Dica:</strong> Se o código não funcionar, verifique se a hora/data do seu celular estão sincronizadas automaticamente (Settings → Date & Time → Automatic).
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-blue-500/20 bg-blue-950/20 p-3 text-xs font-semibold leading-relaxed text-blue-300"><strong>Dica:</strong> se o código não funcionar, verifique se a hora/data do celular estão sincronizadas automaticamente.</div>
+                  {twofaSetupData.qr_code_url ? <img src={twofaSetupData.qr_code_url} alt="QR Code para configurar 2FA" className="mx-auto h-44 w-44 rounded-2xl border-4 border-white bg-white p-2 shadow-xl" /> : null}
+                  <div className="rounded-xl border border-white/5 bg-[#030508] p-3">
+                    <span className="block text-[9px] font-black uppercase tracking-widest text-[#D4AF37]">Chave secreta</span>
+                    <div className="mt-2 flex items-center gap-2"><code className="min-w-0 flex-1 truncate text-xs font-black text-slate-300">{twofaSetupData.secret}</code><button type="button" className="premium-action-button" onClick={copySecretToClipboard}>Copiar</button></div>
                   </div>
-                  <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        background: "#2563eb",
-                        color: "#fff",
-                        fontSize: "0.8rem",
-                        fontWeight: "bold",
-                        flexShrink: 0,
-                      }}
-                    >
-                      1
-                    </span>
-                    <div style={{ fontSize: "0.875rem", color: "#334155" }}>
-                      <strong>Abra o seu aplicativo autenticador</strong>
-                      <p style={{ margin: "0.2rem 0 0", color: "#64748b", fontSize: "0.8rem" }}>
-                        Abra o Google Authenticator, Authy ou similar no seu celular.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        background: "#2563eb",
-                        color: "#fff",
-                        fontSize: "0.8rem",
-                        fontWeight: "bold",
-                        flexShrink: 0,
-                      }}
-                    >
-                      2
-                    </span>
-                    <div style={{ fontSize: "0.875rem", color: "#334155", width: "100%" }}>
-                      <strong>Escaneie o QR Code</strong>
-                      <p style={{ margin: "0.2rem 0 0", color: "#64748b", fontSize: "0.8rem" }}>
-                        Aponte a câmera do aplicativo para o QR Code abaixo ou insira a chave secreta manualmente.
-                      </p>
-
-                      {twofaSetupData.qr_code_url ? (
-                        <div style={{ display: "flex", justifyContent: "center", margin: "1rem 0", background: "#f8fafc", padding: "1rem", borderRadius: "12px", border: "1px dashed #cbd5e1" }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={twofaSetupData.qr_code_url}
-                            alt="QR Code"
-                            width={160}
-                            height={160}
-                          />
-                        </div>
-                      ) : (
-                        <div style={{ background: "#f1f5f9", padding: "0.75rem", borderRadius: "8px", fontFamily: "monospace", fontSize: "0.85rem", wordBreak: "break-all", marginTop: "0.5rem" }}>
-                          {twofaSetupData.secret}
-                        </div>
-                      )}
-
-                        {twofaSetupData.secret && (
-                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem", justifyContent: "space-between" }}>
-                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                              Chave secreta: <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>{twofaSetupData.secret}</code>
-                              <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginTop: "0.25rem" }}>Não gere novamente depois de escanear o QR.</div>
-                            </div>
-                            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginLeft: "0.75rem" }}>
-                              <button type="button" className="secondary-button" onClick={copySecretToClipboard} style={{ minWidth: "120px" }}>
-                                Copiar chave
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        background: "#2563eb",
-                        color: "#fff",
-                        fontSize: "0.8rem",
-                        fontWeight: "bold",
-                        flexShrink: 0,
-                      }}
-                    >
-                      3
-                    </span>
-                    <div style={{ fontSize: "0.875rem", color: "#334155", width: "100%" }}>
-                      <strong>Confirme o código gerado</strong>
-                      <div className="field-group" style={{ marginTop: "0.5rem" }}>
-                        <label htmlFor="totp-verify-profile" style={{ fontSize: "0.8rem", fontWeight: 700 }}>Código de 6 dígitos</label>
-                        <input
-                          ref={twofaCodeInputRef}
-                          id="totp-verify-profile"
-                          className={cn("form-input totp-input", twofaCodeError && "input-error")}
-                          style={{ maxWidth: "160px", textAlign: "center", fontSize: "1.2rem", letterSpacing: "0.15em", padding: "0.5rem" }}
-                          value={twofaCode}
-                          onChange={(e) => update2FACode(e.target.value)}
-                          inputMode="numeric"
-                          maxLength={6}
-                          placeholder="000000"
-                          autoComplete="one-time-code"
-                        />
-                        {twofaCodeError && (
-                          <p role="alert" style={{ color: "var(--destructive)", fontSize: "0.75rem", marginTop: "0.25rem" }}>
-                            {twofaCodeError}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <div className="field-group dark-field"><label htmlFor="twofa-code-dialog">Código de 6 dígitos</label><input ref={twofaCodeInputRef} id="twofa-code-dialog" className={cn("form-input totp-input", twofaCodeError && "input-error")} inputMode="numeric" maxLength={6} value={twofaCode} onChange={(e) => update2FACode(e.target.value)} placeholder="000000" /></div>
+                  {twofaCodeError && <p className="text-xs font-bold text-rose-400" role="alert">{twofaCodeError}</p>}
+                  <button type="button" className="w-full rounded-xl bg-[#D4AF37] py-3 text-xs font-black uppercase tracking-wider text-black transition-all hover:bg-white disabled:opacity-60" onClick={handleVerify2FA} disabled={twofaLoading || twofaCode.length !== 6}>{twofaLoading ? <><Loader2 size={14} className="spinner inline" /> Verificando…</> : "Ativar Autenticação"}</button>
                 </div>
               )}
 
-              {/* Desabilitado e fase done */}
-              {!twoFactorEnabled && twofaPhase === "done" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem", textAlign: "center", alignItems: "center", padding: "1rem 0" }}>
-                  <div
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      borderRadius: "50%",
-                      background: "rgba(16, 185, 129, 0.1)",
-                      color: "#10b981",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    <CheckCircle2 size={32} />
-                  </div>
-                  <h4 style={{ margin: 0, fontWeight: 800, color: "#0f172a", fontSize: "1.25rem" }}>
-                    2FA Habilitado!
-                  </h4>
-                  <p style={{ margin: 0, color: "#64748b", fontSize: "0.875rem", lineHeight: "1.5" }}>
-                    Sua conta agora está protegida com autenticação em dois fatores. Cada login exigirá o código do seu aplicativo autenticador.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="modal__footer" style={{ background: "#f8fafc" }}>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleClose2FAModal}
-                disabled={twofaLoading}
-              >
-                {twofaPhase === "done" ? "Fechar" : "Cancelar"}
-              </button>
-
-              {twoFactorEnabled && (
-                <button
-                  type="button"
-                  className="danger-button"
-                  style={{ minWidth: "140px" }}
-                  onClick={handleDisable2FA}
-                  disabled={twofaLoading}
-                >
-                  {twofaLoading ? (
-                    <>
-                      <Loader2 size={14} className="spinner" aria-hidden="true" />
-                      Desabilitando…
-                    </>
-                  ) : (
-                    "Desabilitar 2FA"
-                  )}
-                </button>
-              )}
-
-              {!twoFactorEnabled && twofaPhase === "setup" && (
-                <button
-                  type="button"
-                  className="primary-button"
-                  style={{ minWidth: "140px" }}
-                  onClick={handleVerify2FA}
-                  disabled={twofaLoading || twofaCode.length < 6}
-                >
-                  {twofaLoading ? (
-                    <>
-                      <Loader2 size={14} className="spinner" aria-hidden="true" />
-                      Verificando…
-                    </>
-                  ) : (
-                    "Habilitar"
-                  )}
-                </button>
-              )}
+              {twofaPhase === "done" && <div className="space-y-4 text-center"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"><ShieldCheck size={30} aria-hidden="true" /></div><p className="text-sm font-semibold text-slate-300">2FA configurado com sucesso.</p><button type="button" className="premium-action-button w-full justify-center py-3" onClick={handleClose2FAModal}>Concluir</button></div>}
             </div>
           </div>
         </div>
