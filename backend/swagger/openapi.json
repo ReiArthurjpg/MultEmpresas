@@ -44,6 +44,9 @@
         "type": "object",
         "properties": {
           "id": {"type": "integer"},
+          "max_installments": {"type": "integer", "example": 1},
+          "credits": {"type": "integer", "example": 0},
+          "max_users": {"type": "integer", "example": 0},
           "name": {"type": "string"},
           "description": {"type": "string"},
           "price": {"type": "number"},
@@ -74,6 +77,8 @@
         "properties": {
           "id": {"type": "integer"},
           "company_id": {"type": "integer", "nullable": true},
+          "phone": {"type": "string"},
+          "credits": {"type": "integer", "example": 0},
           "name": {"type": "string"},
           "email": {"type": "string"},
           "password": {"type": "string"},

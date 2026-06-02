@@ -56,6 +56,8 @@ export type User = {
   id: number;
   company_id: number | null;
   company_name?: string | null;
+  phone?: string | null;
+  credits?: number | null;
   name: string;
   email: string;
   role: "MASTER" | "ADMIN" | "OPERATOR";
@@ -70,6 +72,8 @@ export type CreateUserPayload = {
   password: string;
   role: "MASTER" | "ADMIN" | "OPERATOR";
   company_id?: number | null;
+  phone?: string | null;
+  credits?: number | null;
   must_change_password?: boolean;
 };
 
@@ -349,6 +353,9 @@ export type Plan = {
   name: string;
   description: string | null;
   price: number;
+  max_installments?: number;
+  credits?: number;
+  max_users?: number;
   active: boolean;
   permissions?: string[];
   created_at?: string;
@@ -409,6 +416,9 @@ export type CreatePlanPayload = {
   name: string;
   description?: string | null;
   price: number;
+  max_installments?: number | null;
+  credits?: number | null;
+  max_users?: number | null;
   active?: boolean;
   permissions?: string[];
 };
@@ -439,6 +449,14 @@ export async function createCompany(accessToken: string, payload: CreateCompanyP
 /** GET /companies/:id — Detalha uma empresa (MASTER vê qualquer uma, ADMIN vê apenas a sua) */
 export async function getCompany(accessToken: string, id: number) {
   return request<{ data: Company }>(`/companies/${id}`, {
+    method: "GET",
+    headers: authHeaders(accessToken),
+  });
+}
+
+/** GET /companies/:id/stats — retorna estatísticas rápidas da empresa (ex: quantidade de usuários) */
+export async function getCompanyStats(accessToken: string, id: number) {
+  return request<{ data: { user_count: number; plan_credits?: number | null; used_credits?: number; available_credits?: number | null; plan_max_users?: number | null } }>(`/companies/${id}/stats`, {
     method: "GET",
     headers: authHeaders(accessToken),
   });

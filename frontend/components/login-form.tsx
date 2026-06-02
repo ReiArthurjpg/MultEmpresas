@@ -66,6 +66,26 @@ export function LoginForm() {
         return;
       }
 
+      // If backend indicates the account requires initial 2FA setup (no secret yet),
+      // do not show the TOTP input (it's unusable). Save session if API returned
+      // tokens and redirect to dashboard so the user can complete setup there.
+      if (response.two_factor_setup_required) {
+        if (response.access_token && response.refresh_token && response.user) {
+          saveSession({
+            accessToken: response.access_token,
+            refreshToken: response.refresh_token,
+            user: response.user,
+            company: response.company ?? null,
+          }, rememberMe);
+
+          router.push("/dashboard?setup2fa=1");
+          return;
+        }
+
+        setErrors({ form: response.message ?? "Sua conta requer configuração de 2FA." });
+        return;
+      }
+
       if (!response.access_token || !response.refresh_token || !response.user) {
         setErrors({ form: response.error ?? "A API não retornou uma sessão válida." });
         return;

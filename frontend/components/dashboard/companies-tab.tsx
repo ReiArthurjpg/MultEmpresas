@@ -72,15 +72,15 @@ const styles = {
   },
   hero: {
     position: "relative",
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 320px)",
-    gap: "1.5rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
     overflow: "hidden",
-    padding: "2rem",
-    border: "1px solid rgba(14, 165, 233, 0.16)",
+    padding: "1.5rem",
+    border: "1px solid rgba(212, 175, 55, 0.16)",
     borderRadius: "28px",
     background:
-      "radial-gradient(circle at 8% 20%, rgba(14, 165, 233, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(124, 58, 237, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f7fbfd 52%, #fcfaff 100%)",
+      "radial-gradient(circle at 8% 20%, rgba(212, 175, 55, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(124, 58, 237, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f7fbfd 52%, #fcfaff 100%)",
     boxShadow: "0 24px 70px rgba(15, 23, 42, 0.06)",
   },
   heroContent: {
@@ -89,8 +89,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: "1.25rem",
-    minHeight: "160px",
+    gap: "1rem",
+    minHeight: "0",
   },
   eyebrow: {
     display: "inline-flex",
@@ -165,6 +165,52 @@ const styles = {
     gap: "0.75rem",
     marginTop: "0.5rem",
   },
+  filterPanel: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    marginBottom: "0",
+  },
+  filterField: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+  },
+  filterLabel: {
+    color: "#475569",
+    fontSize: "0.72rem",
+    fontWeight: 700,
+  },
+  filterInput: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  filterSelect: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  toolbarRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "0",
+  },
+  toolbarActions: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
   // Table Styling
   tableContainer: {
     overflow: "hidden",
@@ -208,8 +254,8 @@ const styles = {
     width: "42px",
     height: "42px",
     borderRadius: "12px",
-    background: "rgba(14, 165, 233, 0.08)",
-    border: "1px solid rgba(14, 165, 233, 0.18)",
+    background: "rgba(212, 175, 55, 0.08)",
+    border: "1px solid rgba(212, 175, 55, 0.18)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -226,6 +272,51 @@ const styles = {
     color: "#0284c7",
     fontSize: "0.75rem",
     fontWeight: 700,
+  },
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    marginTop: "0.5rem",
+  },
+  listRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "1rem",
+    padding: "1rem 1.25rem",
+    border: "1px solid #eef2f6",
+    borderRadius: "22px",
+    background: "#ffffff",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+    transition: "all 0.18s ease",
+  },
+  listLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.85rem",
+    minWidth: 0,
+    flex: 1,
+  },
+  listMain: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.3rem",
+    minWidth: 0,
+  },
+  rowMeta: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.5rem",
+    alignItems: "center",
+    color: "#64748b",
+    fontSize: "0.8rem",
+  },
+  listRight: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.4rem",
+    flexShrink: 0,
   },
   // Grid/Cards styling
   gridContainer: {
@@ -382,9 +473,9 @@ const PILL_STYLES: Record<string, CSSProperties> = {
     color: "#6d28d9",
   },
   stateBadge: {
-    background: "rgba(14, 165, 233, 0.08)",
-    border: "1px solid rgba(14, 165, 233, 0.18)",
-    color: "#0284c7",
+    background: "rgba(212, 175, 55, 0.08)",
+    border: "1px solid rgba(212, 175, 55, 0.18)",
+    color: "#D4AF37",
   },
 };
 
@@ -432,6 +523,8 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
 
   // Search & filter
   const [searchTerm, setSearchTerm] = useState("");
+  const [planFilter, setPlanFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -644,12 +737,17 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
 
   const filteredCompanies = companies.filter((c) => {
     const search = searchTerm.toLowerCase();
-    return (
+    const searchMatch =
+      !search ||
       c.company_name.toLowerCase().includes(search) ||
       (c.trade_name && c.trade_name.toLowerCase().includes(search)) ||
       c.cnpj.includes(search) ||
-      c.email.toLowerCase().includes(search)
-    );
+      c.email.toLowerCase().includes(search);
+    
+    const planMatch = !planFilter || String(c.plan_id) === planFilter;
+    const statusMatch = statusFilter === "all" || (statusFilter === "active" ? c.active : !c.active);
+    
+    return searchMatch && planMatch && statusMatch;
   });
 
   return (
@@ -677,97 +775,120 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
       {/* Header */}
       <div className="overview-hero-card" style={styles.hero}>
         <div style={styles.heroContent}>
-          <div style={styles.eyebrow}>
-            <Building2 size={14} aria-hidden="true" />
-            Ecossistema Multi-Empresas
+          <h2 id="companies-tab-title" className="sr-only">
+            Empresas
+          </h2>
+        </div>
+
+        <div style={styles.filterPanel}>
+          <div style={styles.filterField}>
+            <label htmlFor="company-search" style={styles.filterLabel}>
+              Buscar
+            </label>
+            <input
+              id="company-search"
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Nome, CNPJ, email"
+              style={styles.filterInput}
+            />
           </div>
-          <div>
-            <h2 id="companies-tab-title" style={styles.title}>
-              Empresas
-            </h2>
-            <p style={styles.subtitle}>
-              Gerencie os inquilinos (tenants), controle a vinculação a planos do sistema, configure logotipos e audite localizações de rede.
-            </p>
+          <div style={styles.filterField}>
+            <label htmlFor="company-plan" style={styles.filterLabel}>
+              Plano
+            </label>
+            <select
+              id="company-plan"
+              value={planFilter}
+              onChange={(e) => setPlanFilter(e.target.value)}
+              style={styles.filterSelect}
+            >
+              <option value="">Todos os planos</option>
+              {plans.map((plan) => (
+                <option key={plan.id} value={String(plan.id)}>
+                  {plan.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterField}>
+            <label htmlFor="company-status" style={styles.filterLabel}>
+              Status
+            </label>
+            <select
+              id="company-status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+              style={styles.filterSelect}
+            >
+              <option value="all">Todos</option>
+              <option value="active">Ativas</option>
+              <option value="inactive">Inativas</option>
+            </select>
           </div>
         </div>
 
-        <aside className="overview-hero-aside" style={styles.heroAside}>
-          <div style={styles.statsRow}>
-            <div style={styles.statCard}>
-              <span style={styles.statLabel}>Total</span>
-              <strong style={styles.statValue}>{companies.length}</strong>
-            </div>
-            <div style={styles.statCard}>
-              <span style={styles.statLabel}>Ativas</span>
-              <strong style={styles.statValue}>
-                {companies.filter((c) => c.active).length}
-              </strong>
-            </div>
-          </div>
-
-          <div style={styles.actionsRow}>
-            {/* View Mode Toggle Segmented Control */}
-            <div
+        <div style={styles.toolbarRow}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              background: "#f1f5f9",
+              borderRadius: "12px",
+              padding: "0.25rem",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
               style={{
-                display: "inline-flex",
+                display: "flex",
                 alignItems: "center",
-                background: "#f1f5f9",
-                borderRadius: "12px",
-                padding: "0.25rem",
-                border: "1px solid #e2e8f0",
-                flex: 1,
+                justifyContent: "center",
+                gap: "0.35rem",
+                padding: "0.45rem 0.65rem",
+                borderRadius: "9px",
+                border: "none",
+                background: viewMode === "list" ? "#ffffff" : "transparent",
+                color: viewMode === "list" ? "#0f172a" : "#64748b",
+                boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
               }}
             >
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  flex: 1,
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: viewMode === "list" ? "#ffffff" : "transparent",
-                  color: viewMode === "list" ? "#0f172a" : "#64748b",
-                  boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <List size={14} />
-                Lista
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  flex: 1,
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: viewMode === "grid" ? "#ffffff" : "transparent",
-                  color: viewMode === "grid" ? "#0f172a" : "#64748b",
-                  boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <LayoutGrid size={14} />
-                Cards
-              </button>
-            </div>
+              <List size={14} />
+              Lista
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.35rem",
+                padding: "0.45rem 0.65rem",
+                borderRadius: "9px",
+                border: "none",
+                background: viewMode === "grid" ? "#ffffff" : "transparent",
+                color: viewMode === "grid" ? "#0f172a" : "#64748b",
+                boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <LayoutGrid size={14} />
+              Cards
+            </button>
+          </div>
 
+          <div style={styles.toolbarActions}>
             <button
               className="secondary-button"
               style={{
@@ -803,10 +924,10 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                 fontWeight: 850,
                 cursor: "pointer",
                 justifyContent: "center",
-                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
-                color: "#ffffff",
-                border: "none",
-                boxShadow: "0 4px 12px rgba(14, 165, 233, 0.2)",
+                background: "linear-gradient(135deg, #0284c7, #D4AF37)",
+                      color: "#ffffff",
+                      border: "none",
+                      boxShadow: "0 4px 12px rgba(212, 175, 55, 0.2)",
               }}
               onClick={openCreate}
               type="button"
@@ -814,35 +935,7 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
               <Plus size={16} aria-hidden="true" />
             </button>
           </div>
-        </aside>
-      </div>
-
-      {/* Action/Search Bar */}
-      <div style={{ position: "relative", flex: 1, maxWidth: "420px", marginTop: "0.5rem" }}>
-        <Search
-          size={18}
-          style={{
-            position: "absolute",
-            left: "1rem",
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: "#64748b",
-          }}
-        />
-        <input
-          style={{
-            ...styles.input,
-            paddingLeft: "2.75rem",
-            width: "100%",
-            borderRadius: "14px",
-            border: "1px solid #e2e8f0",
-            background: "#ffffff",
-            boxShadow: "0 4px 12px rgba(15, 23, 42, 0.015)",
-          }}
-          placeholder="Buscar por razão social, CNPJ ou email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        </div>
       </div>
 
       {/* Error state */}
@@ -937,7 +1030,7 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                 fontSize: "0.85rem",
                 fontWeight: 800,
                 cursor: "pointer",
-                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                background: "linear-gradient(135deg, #0284c7, #D4AF37)",
                 color: "#ffffff",
                 border: "none",
               }}
@@ -1054,65 +1147,15 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                     >
                       <Edit2 size={13} aria-hidden="true" />
                     </button>
-                    {confirmDeleteId === company.id ? (
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.25rem",
-                          background: "#fef2f2",
-                          border: "1px solid #fee2e2",
-                          padding: "0.2rem 0.4rem",
-                          borderRadius: "8px",
-                          animation: "fadeIn 0.15s ease",
-                        }}
-                      >
-                        <button
-                          className="icon-button"
-                          style={{
-                            ...actionBtnDangerStyle,
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#ef4444",
-                            color: "#ffffff",
-                          }}
-                          onClick={() => handleDelete(company.id)}
-                          type="button"
-                          aria-label="Confirmar exclusão"
-                        >
-                          <Trash2 size={10} />
-                        </button>
-                        <button
-                          className="icon-button"
-                          style={{
-                            ...actionBtnStyle,
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#e2e8f0",
-                            color: "#475569",
-                          }}
-                          onClick={() => setConfirmDeleteId(null)}
-                          type="button"
-                          aria-label="Cancelar exclusão"
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        className="icon-button"
-                        style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
-                        onClick={() => setConfirmDeleteId(company.id)}
-                        type="button"
-                        aria-label={`Excluir ${company.company_name}`}
-                      >
-                        <Trash2 size={13} aria-hidden="true" />
-                      </button>
-                    )}
+                    <button
+                      className="icon-button"
+                      style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
+                      onClick={() => setConfirmDeleteId(company.id)}
+                      type="button"
+                      aria-label={`Excluir ${company.company_name}`}
+                    >
+                      <Trash2 size={13} aria-hidden="true" />
+                    </button>
                   </div>
                 </div>
               </article>
@@ -1120,161 +1163,156 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
           })}
         </div>
       ) : (
-        <div style={styles.tableContainer} role="region" aria-label="Lista de empresas" tabIndex={0}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col" style={styles.th}>Empresa / CNPJ</th>
-                <th scope="col" style={styles.th}>Contato</th>
-                <th scope="col" style={styles.th}>Localidade</th>
-                <th scope="col" style={styles.th}>Plano</th>
-                <th scope="col" style={styles.th}>Status</th>
-                <th scope="col" style={{ ...styles.th, textAlign: "right" }}><span className="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCompanies.map((company) => {
-                const planName = plans.find((p) => p.id === company.plan_id)?.name || "Nenhum Plano";
-                return (
-                  <tr key={company.id} style={styles.tr} className="table-row-hover">
-                    <td style={styles.td}>
-                      <div style={styles.companyCell}>
-                        <div style={styles.companyLogo}>
-                          {company.logo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={`http://localhost:8010${company.logo_url}`}
-                              alt=""
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = "none";
-                              }}
-                            />
-                          ) : (
-                            <Building2 size={16} style={{ color: "#64748b" }} />
-                          )}
-                        </div>
-                        <div>
-                          <div style={styles.companyName}>{company.company_name}</div>
-                          {company.trade_name && (
-                            <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>
-                              {company.trade_name}
-                            </div>
-                          )}
-                          <span style={styles.cnpjText}>
-                            CNPJ: {company.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}
-                          </span>
-                        </div>
+        <div style={styles.listContainer} role="region" aria-label="Lista de empresas">
+          {filteredCompanies.map((company) => {
+            const planName = plans.find((p) => p.id === company.plan_id)?.name || "Nenhum Plano";
+            return (
+              <div key={company.id} style={styles.listRow} className="table-row-hover">
+                <div style={styles.listLeft}>
+                  <div style={styles.companyLogo}>
+                    {company.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`http://localhost:8010${company.logo_url}`}
+                        alt=""
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <Building2 size={16} style={{ color: "#64748b" }} />
+                    )}
+                  </div>
+
+                  <div style={styles.listMain}>
+                    <div style={styles.companyName}>{company.company_name}</div>
+                    {company.trade_name && (
+                      <div style={{ color: "#64748b", fontSize: "0.8rem", fontWeight: 600 }}>
+                        {company.trade_name}
                       </div>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={{ color: "#334155", fontWeight: 500 }}>{company.email}</div>
-                      {company.phone && <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{company.phone}</div>}
-                    </td>
-                    <td style={styles.td}>
-                      <div style={{ color: "#334155", fontWeight: 500 }}>{company.city || "—"}</div>
-                      {company.state && (
-                        <span style={{ ...badgeBaseStyle, ...PILL_STYLES.stateBadge, fontSize: "0.65rem", padding: "0.05rem 0.3rem", marginTop: "0.15rem" }}>
-                          {company.state}
-                        </span>
-                      )}
-                    </td>
-                    <td style={styles.td}>
-                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.plan }}>
-                        {planName}
+                    )}
+                    <span style={styles.cnpjText}>
+                      CNPJ: {company.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ ...styles.listMain, flex: 1, minWidth: 0 }}>
+                  <div style={styles.rowMeta}>
+                    <span>{company.email}</span>
+                    {company.phone && <span>{company.phone}</span>}
+                  </div>
+                  <div style={styles.rowMeta}>
+                    <span>{company.city || "—"}{company.state ? `, ${company.state}` : ""}</span>
+                    <span style={{ ...badgeBaseStyle, ...PILL_STYLES.plan, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                      {planName}
+                    </span>
+                    {company.active ? (
+                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.active, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                        Ativo
                       </span>
-                    </td>
-                    <td style={styles.td}>
-                      {company.active ? (
-                        <span style={{ ...badgeBaseStyle, ...PILL_STYLES.active }}>
-                          Ativo
-                        </span>
-                      ) : (
-                        <span style={{ ...badgeBaseStyle, ...PILL_STYLES.inactive }}>
-                          Inativo
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ ...styles.td, textAlign: "right" }}>
-                      <div style={{ display: "inline-flex", gap: "0.4rem", justifyContent: "flex-end" }}>
-                        <button
-                          className="icon-button"
-                          style={actionBtnStyle}
-                          onClick={() => openEdit(company)}
-                          title="Editar empresa"
-                          type="button"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        {confirmDeleteId === company.id ? (
-                          <div
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "0.25rem",
-                              background: "#fef2f2",
-                              border: "1px solid #fee2e2",
-                              padding: "0.25rem 0.5rem",
-                              borderRadius: "10px",
-                              animation: "fadeIn 0.15s ease",
-                            }}
-                          >
-                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.15rem" }}>
-                              Excluir?
-                            </span>
-                            <button
-                              className="icon-button"
-                              style={{
-                                ...actionBtnDangerStyle,
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#ef4444",
-                                color: "#ffffff",
-                              }}
-                              onClick={() => handleDelete(company.id)}
-                              type="button"
-                              aria-label="Confirmar exclusão"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                            <button
-                              className="icon-button"
-                              style={{
-                                ...actionBtnStyle,
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#e2e8f0",
-                                color: "#475569",
-                              }}
-                              onClick={() => setConfirmDeleteId(null)}
-                              type="button"
-                              aria-label="Cancelar exclusão"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            className="icon-button"
-                            style={actionBtnDangerStyle}
-                            onClick={() => setConfirmDeleteId(company.id)}
-                            title="Remover empresa"
-                            type="button"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    ) : (
+                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.inactive, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                        Inativo
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={styles.listRight}>
+                  <button
+                    className="icon-button"
+                    style={actionBtnStyle}
+                    onClick={() => openEdit(company)}
+                    title="Editar empresa"
+                    type="button"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button
+                    className="icon-button"
+                    style={actionBtnDangerStyle}
+                    onClick={() => setConfirmDeleteId(company.id)}
+                    title="Remover empresa"
+                    type="button"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {confirmDeleteId !== null && (
+        <div
+          style={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmDeleteId(null);
+          }}
+        >
+          <div style={styles.modal}>
+            <div style={styles.modalHeader}>
+              <h3 id="delete-dialog-title" style={styles.modalTitle}>
+                Confirmar exclusão
+              </h3>
+              <button
+                className="icon-button"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+                aria-label="Fechar diálogo de exclusão"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={styles.modalBody}>
+              <p style={{ margin: 0, color: "#334155", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                Tem certeza que deseja excluir esta empresa? Esta ação não pode ser desfeita.
+              </p>
+              <p style={{ margin: "0.75rem 0 0", color: "#64748b", fontSize: "0.88rem" }}>
+                {companies.find((company) => company.id === confirmDeleteId)?.company_name ?? "Empresa"}
+              </p>
+            </div>
+            <div style={styles.modalFooter}>
+              <button
+                className="secondary-button"
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                className="primary-button"
+                onClick={() => handleDelete(confirmDeleteId)}
+                type="button"
+                style={{
+                  background: "#dc2626",
+                  color: "#ffffff",
+                  border: "none",
+                  minWidth: "120px",
+                }}
+              >
+                Excluir empresa
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1292,7 +1330,7 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
           <div style={styles.modal}>
             <div style={styles.modalHeader}>
               <h3 id="modal-title" style={styles.modalTitle}>
-                {modalMode === "create" ? "✨ Nova Empresa" : "✍️ Editar Empresa"}
+                {modalMode === "create" ? " Nova Empresa" : " Editar Empresa"}
               </h3>
               <button
                 className="icon-button"
@@ -1418,12 +1456,12 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                     style={{
                       padding: "0.75rem 1.25rem",
                       borderRadius: "12px",
-                      background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                      background: "linear-gradient(135deg, #0284c7, #D4AF37)",
                       color: "#ffffff",
                       border: "none",
                       fontWeight: 800,
                       cursor: "pointer",
-                      boxShadow: "0 4px 12px rgba(14, 165, 233, 0.2)",
+                      boxShadow: "0 4px 12px rgba(212, 175, 55, 0.2)",
                     }}
                     onClick={handleCNPJLookup}
                     disabled={checkingCnpj || form.cnpj.length < 14}
@@ -1635,7 +1673,7 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                   fontSize: "0.85rem",
                   fontWeight: 800,
                   cursor: "pointer",
-                  background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                  background: "linear-gradient(135deg, #0284c7, #D4AF37)",
                   color: "#ffffff",
                   border: "none",
                   boxShadow: "0 4px 12px rgba(14, 165, 233, 0.2)",

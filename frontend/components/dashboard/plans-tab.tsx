@@ -26,13 +26,172 @@ type PlansTabProps = {
   accessToken: string;
 };
 
-const PERMISSIONS = [
-  { id: "CREATE_USERS", label: "Gerenciar Usuários", desc: "Criar, editar e remover usuários da empresa" },
-  { id: "CREATE_CLIENTS", label: "Gerenciar Clientes", desc: "Cadastrar e gerenciar clientes no sistema" },
-  { id: "CREATE_ORDERS", label: "Gerenciar Pedidos", desc: "Lançar e gerenciar vendas ou pedidos" },
-  { id: "VIEW_REPORTS", label: "Visualizar Relatórios", desc: "Acessar relatórios e analytics da empresa" },
-  { id: "EXPORT_DATA", label: "Exportar Dados", desc: "Exportar dados da empresa em planilhas/PDF" },
+type PermissionItem = {
+  id: string;
+  label: string;
+};
+
+type PermissionGroup = {
+  title: string;
+  permissions?: PermissionItem[];
+  subgroups?: Array<{
+    title: string;
+    permissions: PermissionItem[];
+  }>;
+};
+
+const PERMISSION_GROUPS: PermissionGroup[] = [
+  {
+    title: "DASHBOARD",
+    permissions: [
+      { id: "DASHBOARD_GERAL", label: "Dashboard Geral" },
+      { id: "DASHBOARD_INDICADORES", label: "Indicadores" },
+      { id: "DASHBOARD_METAS", label: "Metas" },
+      { id: "DASHBOARD_RANKING_OPERADORES", label: "Ranking de Operadores" },
+    ],
+  },
+  {
+    title: "OPERAÇÕES",
+    permissions: [
+      { id: "OPERACOES_CONSULTAS_CORBAN", label: "Consultas Corban" },
+      { id: "OPERACOES_CONSULTAS_INSS", label: "Consultas INSS" },
+      { id: "OPERACOES_CONSULTAS_SIAPE", label: "Consultas SIAPE" },
+      { id: "OPERACOES_CONSULTAS_GOV", label: "Consultas GOV" },
+      { id: "OPERACOES_CONSULTAS_PREFEITURAS", label: "Consultas Prefeituras" },
+      { id: "OPERACOES_CONSULTAS_CLT", label: "Consultas CLT" },
+      { id: "OPERACOES_CONSULTAS_FGTS", label: "Consultas FGTS" },
+    ],
+  },
+  {
+    title: "EXTRATO BANCÁRIO",
+    permissions: [{ id: "EXTRATO_BANCARIO_DADOS_CONSIGNACAO", label: "Dados de Consignação" }],
+  },
+  {
+    title: "OFERTAS DE CRÉDITO",
+    permissions: [{ id: "OFERTAS_CREDITO_NOVOS_CONTRATOS", label: "Novos Contratos" }],
+  },
+  {
+    title: "MAILING",
+    permissions: [
+      { id: "MAILING_GERAR_LISTAS", label: "Gerar Listas" },
+      { id: "MAILING_HIGIENIZACAO", label: "Higienização" },
+      { id: "MAILING_EXPORTACAO", label: "Exportação" },
+      { id: "MAILING_IMPORTACAO", label: "Importação" },
+    ],
+  },
+  {
+    title: "DIGITAÇÃO DE CONTRATOS",
+    permissions: [{ id: "DIGITACAO_CONTRATOS", label: "Digitação de Contratos" }],
+  },
+  {
+    title: "CAMPANHAS",
+    permissions: [
+      { id: "CAMPANHAS_IMPORTAR", label: "Importar Campanha" },
+      { id: "CAMPANHAS_EDITAR", label: "Editar Campanha" },
+      { id: "CAMPANHAS_DISPARAR", label: "Disparar Campanha" },
+      { id: "CAMPANHAS_MONITORAR", label: "Monitorar Campanha" },
+    ],
+  },
+  {
+    title: "AGENDA",
+    permissions: [
+      { id: "AGENDA_AGENDAMENTOS", label: "Agendamentos" },
+      { id: "AGENDA_RETORNOS", label: "Retornos" },
+      { id: "AGENDA_CALENDARIO", label: "Calendário" },
+    ],
+  },
+  {
+    title: "NEXABOT",
+    permissions: [{ id: "NEXABOT_DISPARO_WHATSAPP", label: "Disparo WhatsApp" }],
+  },
+  {
+    title: "HOT PHONE",
+    permissions: [{ id: "HOT_PHONE_CONSULTA_TELEFONES", label: "Consulta Telefones" }],
+  },
+  {
+    title: "ANÁLISE DE CRÉDITO",
+    permissions: [
+      { id: "ANALISE_CREDITO_SPC", label: "SPC" },
+      { id: "ANALISE_CREDITO_SERASA", label: "Serasa" },
+      { id: "ANALISE_CREDITO_BOA_VISTA", label: "Boa Vista" },
+    ],
+  },
+  {
+    title: "INTEGRAÇÕES",
+    permissions: [
+      { id: "INTEGRACOES_APIS", label: "APIs" },
+      { id: "INTEGRACOES_WEBHOOKS", label: "Webhooks" },
+      { id: "INTEGRACOES_PARCEIROS", label: "Parceiros" },
+    ],
+  },
+  {
+    title: "RELATÓRIOS",
+    permissions: [
+      { id: "RELATORIOS_OPERACIONAL", label: "Operacional" },
+      { id: "RELATORIOS_COMERCIAL", label: "Comercial" },
+      { id: "RELATORIOS_FINANCEIRO", label: "Financeiro" },
+      { id: "RELATORIOS_LOGS", label: "Logs" },
+    ],
+  },
+  {
+    title: "CONFIGURAÇÕES",
+    permissions: [
+      { id: "CONFIGURACOES_SISTEMA", label: "Sistema" },
+      { id: "CONFIGURACOES_APIS", label: "APIs" },
+      { id: "CONFIGURACOES_LOGS", label: "Logs" },
+      { id: "CONFIGURACOES_SEGURANCA", label: "Segurança" },
+    ],
+  },
+  {
+    title: "CRÉDITOS",
+    permissions: [
+      { id: "CREDITOS_EMPRESAS", label: "Empresas" },
+      { id: "CREDITOS_SALDO", label: "Saldo de Créditos" },
+      { id: "CREDITOS_COMPRA", label: "Compra de Créditos" },
+      { id: "CREDITOS_HISTORICO", label: "Histórico" },
+      { id: "CREDITOS_USUARIOS", label: "Usuários" },
+      { id: "CREDITOS_DISTRIBUICAO", label: "Distribuição de Créditos" },
+      { id: "CREDITOS_LIMITE_OPERADOR", label: "Limite por Operador" },
+      { id: "CREDITOS_CONSUMO", label: "Consumo" },
+    ],
+  },
+  {
+    title: "CADASTROS",
+    subgroups: [
+      {
+        title: "Usuários",
+        permissions: [
+          { id: "CADASTROS_USUARIOS_INCLUIR", label: "Incluir" },
+          { id: "CADASTROS_USUARIOS_ALTERAR", label: "Alterar" },
+          { id: "CADASTROS_USUARIOS_EXCLUIR", label: "Excluir" },
+          { id: "CADASTROS_USUARIOS_BLOQUEAR", label: "Bloquear" },
+        ],
+      },
+      {
+        title: "Empresas",
+        permissions: [
+          { id: "CADASTROS_EMPRESAS_INCLUIR", label: "Incluir" },
+          { id: "CADASTROS_EMPRESAS_ALTERAR", label: "Alterar" },
+          { id: "CADASTROS_EMPRESAS_EXCLUIR", label: "Excluir" },
+        ],
+      },
+      {
+        title: "Planos",
+        permissions: [
+          { id: "CADASTROS_PLANOS_BRONZE", label: "Bronze" },
+          { id: "CADASTROS_PLANOS_PRATA", label: "Prata" },
+          { id: "CADASTROS_PLANOS_OURO", label: "Ouro" },
+          { id: "CADASTROS_PLANOS_PERSONALIZADO", label: "Personalizado" },
+        ],
+      },
+    ],
+  },
 ];
+
+const PERMISSIONS = PERMISSION_GROUPS.flatMap((group) => [
+  ...(group.permissions ?? []),
+  ...(group.subgroups?.flatMap((subgroup) => subgroup.permissions) ?? []),
+]);
 
 type ModalMode = "create" | "edit";
 
@@ -40,6 +199,8 @@ type PlanForm = {
   name: string;
   description: string;
   price: string;
+  credits: string;
+  maxUsers: string;
   active: boolean;
   permissions: string[];
 };
@@ -48,6 +209,8 @@ const EMPTY_FORM: PlanForm = {
   name: "",
   description: "",
   price: "0",
+  credits: "0",
+  maxUsers: "0",
   active: true,
   permissions: [],
 };
@@ -61,11 +224,11 @@ const styles = {
   },
   hero: {
     position: "relative",
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 320px)",
-    gap: "1.5rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
     overflow: "hidden",
-    padding: "2rem",
+    padding: "1.5rem",
     border: "1px solid rgba(124, 58, 237, 0.16)",
     borderRadius: "28px",
     background:
@@ -78,8 +241,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: "1.25rem",
-    minHeight: "160px",
+    gap: "1rem",
+    minHeight: "0",
   },
   eyebrow: {
     display: "inline-flex",
@@ -154,6 +317,52 @@ const styles = {
     gap: "0.75rem",
     marginTop: "0.5rem",
   },
+  filterPanel: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    marginBottom: "0",
+  },
+  filterField: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+  },
+  filterLabel: {
+    color: "#475569",
+    fontSize: "0.72rem",
+    fontWeight: 700,
+  },
+  filterInput: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  filterSelect: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  toolbarRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "0",
+  },
+  toolbarActions: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
   // Table Styling
   tableContainer: {
     overflow: "hidden",
@@ -220,6 +429,45 @@ const styles = {
     boxShadow: "0 10px 30px rgba(15, 23, 42, 0.03)",
     transition: "all 0.2s ease",
   },
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+    marginTop: "0.5rem",
+  },
+  listRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "1rem",
+    padding: "1rem 1.25rem",
+    border: "1px solid #eef2f6",
+    borderRadius: "22px",
+    background: "#ffffff",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+    transition: "all 0.18s ease",
+  },
+  rowMain: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+    flex: 1,
+    minWidth: 0,
+  },
+  rowMeta: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.65rem",
+    alignItems: "center",
+    color: "#64748b",
+    fontSize: "0.82rem",
+  },
+  rowActions: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.4rem",
+    flexShrink: 0,
+  },
   cardTop: {
     display: "flex",
     alignItems: "flex-start",
@@ -270,6 +518,59 @@ const styles = {
     color: "#334155",
     fontWeight: 650,
   },
+  permissionGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.65rem",
+    padding: "0.85rem",
+    border: "1px solid #e2e8f0",
+    borderRadius: "14px",
+    background: "#ffffff",
+  },
+  permissionGroupTitle: {
+    margin: 0,
+    color: "#7c3aed",
+    fontSize: "0.75rem",
+    fontWeight: 850,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  permissionSubgroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.55rem",
+    paddingLeft: "0.5rem",
+    borderLeft: "2px solid #ede9fe",
+  },
+  permissionSubgroupTitle: {
+    color: "#334155",
+    fontSize: "0.82rem",
+    fontWeight: 850,
+  },
+  permissionGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: "0.6rem",
+  },
+  permissionOption: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.6rem",
+    cursor: "pointer",
+    userSelect: "none",
+  },
+  permissionCheckbox: {
+    width: "18px",
+    height: "18px",
+    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    cursor: "pointer",
+  },
+  permissionOptionLabel: {
+    color: "#0f172a",
+    fontSize: "0.84rem",
+    fontWeight: 750,
+  },
   cardFooter: {
     display: "flex",
     alignItems: "center",
@@ -292,7 +593,8 @@ const styles = {
   },
   modal: {
     width: "100%",
-    maxWidth: "580px",
+    maxWidth: "760px",
+    maxHeight: "calc(100vh - 3rem)",
     overflow: "hidden",
     borderRadius: "28px",
     background: "#ffffff",
@@ -318,6 +620,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "1.25rem",
+    maxHeight: "calc(100vh - 15.5rem)",
+    overflowY: "auto",
     padding: "1.75rem",
   },
   modalFooter: {
@@ -325,7 +629,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "flex-end",
     gap: "0.75rem",
-    padding: "1.25rem 1.75rem",
+    padding: "1.5rem 1.75rem",
     borderTop: "1px solid #f1f5f9",
     background: "#fafbfe",
   },
@@ -410,9 +714,12 @@ const actionBtnDangerStyle: CSSProperties = {
 
 export function PlansTab({ accessToken }: PlansTabProps) {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [selectedInstallments, setSelectedInstallments] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
@@ -451,6 +758,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
     setForm(EMPTY_FORM);
     setFormError(null);
     setEditingPlan(null);
+    setSelectedInstallments(1);
     setModalMode("create");
   }
 
@@ -459,11 +767,14 @@ export function PlansTab({ accessToken }: PlansTabProps) {
       name: plan.name,
       description: plan.description || "",
       price: String(plan.price),
+      credits: String(plan.credits ?? 0),
+      maxUsers: String(plan.max_users ?? 0),
       active: plan.active,
       permissions: plan.permissions || [],
     });
     setFormError(null);
     setEditingPlan(plan);
+    setSelectedInstallments(plan.max_installments ?? 1);
     setModalMode("edit");
   }
 
@@ -502,10 +813,16 @@ export function PlansTab({ accessToken }: PlansTabProps) {
     setSaving(true);
     setFormError(null);
 
+    const parsedCredits = parseInt(form.credits || "0") || 0;
+    const parsedMaxUsers = parseInt(form.maxUsers || "0") || 0;
+
     const payload: CreatePlanPayload = {
       name: form.name,
       description: form.description || null,
       price: parsedPrice,
+      max_installments: selectedInstallments,
+      credits: parsedCredits,
+      max_users: parsedMaxUsers,
       active: form.active,
       permissions: form.permissions,
     };
@@ -535,6 +852,18 @@ export function PlansTab({ accessToken }: PlansTabProps) {
     }
   }
 
+  const filteredPlans = plans.filter((p) => {
+    const search = searchTerm.trim().toLowerCase();
+    const searchMatch =
+      !search ||
+      p.name.toLowerCase().includes(search) ||
+      p.description?.toLowerCase().includes(search);
+    const statusMatch =
+      statusFilter === "all" ||
+      (statusFilter === "active" ? p.active : !p.active);
+    return searchMatch && statusMatch;
+  });
+
   return (
     <section
       className="tab-section overview-dashboard"
@@ -560,17 +889,39 @@ export function PlansTab({ accessToken }: PlansTabProps) {
       {/* Header */}
       <div className="overview-hero-card" style={styles.hero}>
         <div style={styles.heroContent}>
-          <div style={styles.eyebrow}>
-            <Award size={14} aria-hidden="true" />
-            Precificação & Licenciamento
+          <h2 id="plans-tab-title" className="sr-only">
+            Planos
+          </h2>
+        </div>
+
+        <div style={styles.filterPanel}>
+          <div style={styles.filterField}>
+            <label htmlFor="plan-search" style={styles.filterLabel}>
+              Buscar
+            </label>
+            <input
+              id="plan-search"
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Nome ou descrição"
+              style={styles.filterInput}
+            />
           </div>
-          <div>
-            <h2 id="plans-tab-title" style={styles.title}>
-              Planos
-            </h2>
-            <p style={styles.subtitle}>
-              Configure os pacotes do sistema, ajuste limites de precificação mensal e defina quais permissões operacionais estarão vinculadas.
-            </p>
+          <div style={styles.filterField}>
+            <label htmlFor="plan-status" style={styles.filterLabel}>
+              Status
+            </label>
+            <select
+              id="plan-status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+              style={styles.filterSelect}
+            >
+              <option value="all">Todos</option>
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+            </select>
           </div>
         </div>
 
@@ -743,7 +1094,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
           <Loader2 size={32} className="spinner" aria-hidden="true" style={{ color: "#7c3aed" }} />
           <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>Carregando planos…</span>
         </div>
-      ) : plans.length === 0 ? (
+      ) : filteredPlans.length === 0 ? (
         <div
           style={{
             display: "flex",
@@ -803,7 +1154,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
         </div>
       ) : viewMode === "grid" ? (
         <div style={styles.gridContainer} role="region" aria-label="Lista de planos em cards">
-          {plans.map((plan) => (
+          {filteredPlans.map((plan) => (
             <article key={plan.id} style={styles.planCard} className="table-row-hover">
               <div style={styles.cardTop}>
                 <div>
@@ -815,6 +1166,15 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                       ? "Grátis"
                       : plan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </strong>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    Parcelas: {(plan.max_installments ?? 1)}x
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.15rem' }}>
+                    Créditos: {(plan.credits ?? 0)}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.15rem' }}>
+                    Limite: {(plan.max_users ?? 0)} usuários
+                  </div>
                 </div>
                 <div>
                   {plan.active ? (
@@ -841,15 +1201,22 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                     Recursos Inclusos:
                   </span>
                   {plan.permissions && plan.permissions.length > 0 ? (
-                    plan.permissions.map((perm) => {
-                      const pInfo = PERMISSIONS.find((p) => p.id === perm);
-                      return (
-                        <div key={perm} style={styles.permissionLine} title={pInfo?.desc}>
-                          <span style={{ color: "#7c3aed", fontSize: "0.85rem" }}>✓</span>
-                          <span>{pInfo?.label || perm}</span>
+                    <>
+                      {plan.permissions.slice(0, 4).map((perm) => {
+                        const pInfo = PERMISSIONS.find((p) => p.id === perm);
+                        return (
+                          <div key={perm} style={styles.permissionLine} title={pInfo?.label}>
+                            <span style={{ color: "#7c3aed", fontSize: "0.85rem" }}>✓</span>
+                            <span>{pInfo?.label || perm}</span>
+                          </div>
+                        );
+                      })}
+                      {plan.permissions.length > 4 && (
+                        <div style={{ ...styles.permissionLine, color: "#7c3aed", fontWeight: 800, marginTop: "0.25rem" }}>
+                          <span>+ {plan.permissions.length - 4} outros recursos inclusos</span>
                         </div>
-                      );
-                    })
+                      )}
+                    </>
                   ) : (
                     <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
                       Nenhum recurso específico
@@ -871,216 +1238,182 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                   >
                     <Edit2 size={13} aria-hidden="true" />
                   </button>
-                  {confirmDeleteId === plan.id ? (
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        background: "#fef2f2",
-                        border: "1px solid #fee2e2",
-                        padding: "0.2rem 0.4rem",
-                        borderRadius: "8px",
-                        animation: "fadeIn 0.15s ease",
-                      }}
-                    >
-                      <button
-                        className="icon-button"
-                        style={{
-                          ...actionBtnDangerStyle,
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          border: "none",
-                          background: "#ef4444",
-                          color: "#ffffff",
-                        }}
-                        onClick={() => handleDelete(plan.id)}
-                        type="button"
-                        aria-label="Confirmar exclusão"
-                      >
-                        <Trash2 size={10} />
-                      </button>
-                      <button
-                        className="icon-button"
-                        style={{
-                          ...actionBtnStyle,
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          border: "none",
-                          background: "#e2e8f0",
-                          color: "#475569",
-                        }}
-                        onClick={() => setConfirmDeleteId(null)}
-                        type="button"
-                        aria-label="Cancelar exclusão"
-                      >
-                        <X size={10} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="icon-button"
-                      style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
-                      onClick={() => setConfirmDeleteId(plan.id)}
-                      type="button"
-                      aria-label={`Excluir ${plan.name}`}
-                    >
-                      <Trash2 size={13} aria-hidden="true" />
-                    </button>
-                  )}
+                  <button
+                    className="icon-button"
+                    style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
+                    onClick={() => setConfirmDeleteId(plan.id)}
+                    type="button"
+                    aria-label={`Excluir ${plan.name}`}
+                  >
+                    <Trash2 size={13} aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             </article>
           ))}
         </div>
       ) : (
-        <div style={styles.tableContainer} role="region" aria-label="Lista de planos" tabIndex={0}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col" style={styles.th}>Plano</th>
-                <th scope="col" style={styles.th}>Preço</th>
-                <th scope="col" style={styles.th}>Status</th>
-                <th scope="col" style={styles.th}>Permissões Ativas</th>
-                <th scope="col" style={{ ...styles.th, textAlign: "right" }}><span className="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((plan) => (
-                <tr key={plan.id} style={styles.tr} className="table-row-hover">
-                  <td style={styles.td}>
-                    <div>
-                      <div style={styles.planName}>{plan.name}</div>
-                      {plan.description && (
-                        <span style={styles.planDescText}>
-                          {plan.description}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={styles.td}>
-                    <strong style={{ color: "#0f172a", fontSize: "0.95rem" }}>
-                      {plan.price === 0
-                        ? "Grátis"
-                        : plan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                    </strong>
-                  </td>
-                  <td style={styles.td}>
-                    {plan.active ? (
-                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.active }}>
-                        Ativo
-                      </span>
-                    ) : (
-                      <span style={{ ...badgeBaseStyle, ...PILL_STYLES.inactive }}>
-                        Inativo
-                      </span>
-                    )}
-                  </td>
-                  <td style={styles.td}>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
-                      {plan.permissions && plan.permissions.length > 0 ? (
-                        plan.permissions.map((perm) => (
-                          <span
-                            key={perm}
-                            style={{
-                              ...badgeBaseStyle,
-                              ...PILL_STYLES.permission,
-                              fontSize: "0.68rem",
-                              padding: "0.125rem 0.375rem",
-                            }}
-                            title={PERMISSIONS.find((p) => p.id === perm)?.desc}
-                          >
-                            {PERMISSIONS.find((p) => p.id === perm)?.label || perm}
-                          </span>
-                        ))
-                      ) : (
-                        <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
-                          Nenhuma
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ ...styles.td, textAlign: "right" }}>
-                    <div style={{ display: "inline-flex", gap: "0.4rem", justifyContent: "flex-end" }}>
-                      <button
-                        className="icon-button"
-                        style={actionBtnStyle}
-                        onClick={() => openEdit(plan)}
-                        title="Editar plano"
-                        type="button"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      {confirmDeleteId === plan.id ? (
-                        <div
+        <div style={styles.listContainer} role="region" aria-label="Lista de planos">
+          {filteredPlans.map((plan) => (
+            <div key={plan.id} style={styles.listRow} className="table-row-hover">
+              <div style={styles.rowMain}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.9rem", flexWrap: "wrap" }}>
+                  <div>
+                    <div style={styles.planName}>{plan.name}</div>
+                    {plan.description && <div style={styles.planDescText}>{plan.description}</div>}
+                  </div>
+                  <strong style={styles.planPriceTag}>
+                    {plan.price === 0
+                      ? "Grátis"
+                      : plan.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </strong>
+                  <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                    Parcelas: {(plan.max_installments ?? 1)}x
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                    Créditos: {(plan.credits ?? 0)}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                    Limite: {(plan.max_users ?? 0)} usuários
+                  </div>
+                </div>
+                <div style={styles.rowMeta}>
+                  {plan.active ? (
+                    <span style={{ ...badgeBaseStyle, ...PILL_STYLES.active, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                      Ativo
+                    </span>
+                  ) : (
+                    <span style={{ ...badgeBaseStyle, ...PILL_STYLES.inactive, fontSize: "0.72rem", padding: "0.2rem 0.55rem" }}>
+                      Inativo
+                    </span>
+                  )}
+                  <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
+                    {plan.permissions?.length ?? 0} recursos
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.55rem" }}>
+                  {plan.permissions && plan.permissions.length > 0 ? (
+                    plan.permissions.slice(0, 5).map((perm) => {
+                      const pInfo = PERMISSIONS.find((p) => p.id === perm);
+                      return (
+                        <span
+                          key={perm}
                           style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "0.25rem",
-                            background: "#fef2f2",
-                            border: "1px solid #fee2e2",
-                            padding: "0.25rem 0.5rem",
-                            borderRadius: "10px",
-                            animation: "fadeIn 0.15s ease",
+                            ...badgeBaseStyle,
+                            ...PILL_STYLES.permission,
+                            fontSize: "0.72rem",
+                            padding: "0.2rem 0.55rem",
+                            borderRadius: "8px",
+                            background: "rgba(124, 58, 237, 0.05)",
+                            border: "1px solid rgba(124, 58, 237, 0.12)",
+                            color: "#6d28d9",
                           }}
+                          title={pInfo?.label}
                         >
-                          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.15rem" }}>
-                            Excluir?
-                          </span>
-                          <button
-                            className="icon-button"
-                            style={{
-                              ...actionBtnDangerStyle,
-                              width: "26px",
-                              height: "26px",
-                              borderRadius: "6px",
-                              border: "none",
-                              background: "#ef4444",
-                              color: "#ffffff",
-                            }}
-                            onClick={() => handleDelete(plan.id)}
-                            type="button"
-                            aria-label="Confirmar exclusão"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                          <button
-                            className="icon-button"
-                            style={{
-                              ...actionBtnStyle,
-                              width: "26px",
-                              height: "26px",
-                              borderRadius: "6px",
-                              border: "none",
-                              background: "#e2e8f0",
-                              color: "#475569",
-                            }}
-                            onClick={() => setConfirmDeleteId(null)}
-                            type="button"
-                            aria-label="Cancelar exclusão"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          className="icon-button"
-                          style={actionBtnDangerStyle}
-                          onClick={() => setConfirmDeleteId(plan.id)}
-                          title="Remover plano"
-                          type="button"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                          {pInfo?.label || perm}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
+                      Nenhum recurso específico
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div style={styles.rowActions}>
+                <button
+                  className="icon-button"
+                  style={actionBtnStyle}
+                  onClick={() => openEdit(plan)}
+                  title="Editar plano"
+                  type="button"
+                >
+                  <Edit2 size={14} />
+                </button>
+                <button
+                  className="icon-button"
+                  style={actionBtnDangerStyle}
+                  onClick={() => setConfirmDeleteId(plan.id)}
+                  title="Remover plano"
+                  type="button"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {confirmDeleteId !== null && (
+        <div
+          style={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmDeleteId(null);
+          }}
+        >
+          <div style={styles.modal}>
+            <div style={styles.modalHeader}>
+              <h3 id="delete-dialog-title" style={styles.modalTitle}>
+                Confirmar exclusão
+              </h3>
+              <button
+                className="icon-button"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+                aria-label="Fechar diálogo de exclusão"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={styles.modalBody}>
+              <p style={{ margin: 0, color: "#334155", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.
+              </p>
+              <p style={{ margin: "0.75rem 0 0", color: "#64748b", fontSize: "0.88rem" }}>
+                {plans.find((plan) => plan.id === confirmDeleteId)?.name ?? "Plano"}
+              </p>
+            </div>
+            <div style={styles.modalFooter}>
+              <button
+                className="secondary-button"
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                className="primary-button"
+                onClick={() => handleDelete(confirmDeleteId)}
+                type="button"
+                style={{
+                  background: "#dc2626",
+                  color: "#ffffff",
+                  border: "none",
+                  minWidth: "120px",
+                }}
+              >
+                Excluir plano
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1098,7 +1431,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
           <div style={styles.modal}>
             <div style={styles.modalHeader}>
               <h3 id="modal-title" style={styles.modalTitle}>
-                {modalMode === "create" ? "✨ Novo Plano" : "✍️ Editar Plano"}
+                {modalMode === "create" ? "Novo Plano" : "Editar Plano"}
               </h3>
               <button
                 className="icon-button"
@@ -1122,7 +1455,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
               </button>
             </div>
 
-            <div style={{ ...styles.modalBody, maxHeight: "75vh", overflowY: "auto" }}>
+            <div style={styles.modalBody}>
               <div style={styles.fieldGroup}>
                 <label htmlFor="plan-name" style={styles.label}>Nome do plano</label>
                 <input
@@ -1146,7 +1479,7 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 120px 120px', gap: '1rem', alignItems: 'end' }}>
                 <div style={styles.fieldGroup}>
                   <label htmlFor="plan-price" style={styles.label}>Preço mensal (BRL)</label>
                   <input
@@ -1156,31 +1489,58 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                     step="0.01"
                     style={styles.input}
                     value={form.price}
-                    onChange={(e) => updateField("price", e.target.value)}
+                    onChange={(e) => updateField('price', e.target.value)}
                   />
                 </div>
 
                 <div style={styles.fieldGroup}>
-                  <label htmlFor="plan-active" style={styles.label}>Status</label>
+                  <label htmlFor="plan-installments" style={styles.label}>Parcelamento</label>
                   <select
-                    id="plan-active"
-                    style={{
-                      ...styles.input,
-                      appearance: "none",
-                      backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "right 1rem center",
-                      backgroundSize: "1.2rem",
-                      paddingRight: "2.5rem",
-                    }}
-                    value={form.active ? "true" : "false"}
-                    onChange={(e) => updateField("active", e.target.value === "true")}
+                    id="plan-installments"
+                    style={{ ...styles.input, appearance: 'none' }}
+                    value={String(selectedInstallments)}
+                    onChange={(e) => setSelectedInstallments(Number(e.target.value))}
                   >
-                    <option value="true">Ativo</option>
-                    <option value="false">Inativo</option>
+                    {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => {
+                      const p = parseFloat(form.price || '0') || 0;
+                      const per = n > 0 ? p / n : 0;
+                      return (
+                        <option key={n} value={String(n)}>
+                          {`${n}x — ${per.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
+
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="plan-credits" style={styles.label}>Crédito</label>
+                  <input
+                    id="plan-credits"
+                    type="number"
+                    min="0"
+                    step="1"
+                    style={styles.input}
+                    value={form.credits}
+                    onChange={(e) => updateField('credits', e.target.value)}
+                  />
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label htmlFor="plan-max-users" style={styles.label}>Limite de usuários</label>
+                  <input
+                    id="plan-max-users"
+                    type="number"
+                    min="0"
+                    step="1"
+                    style={styles.input}
+                    value={form.maxUsers}
+                    onChange={(e) => updateField('maxUsers', e.target.value)}
+                  />
+                </div>
               </div>
+
+              {/* Removed status select and parceling simulation as requested */}
 
               {/* Permissões Checklist */}
               <div style={{ ...styles.fieldGroup, marginTop: "1rem" }}>
@@ -1191,46 +1551,106 @@ export function PlansTab({ accessToken }: PlansTabProps) {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "0.75rem",
-                    background: "#fafbfe",
-                    padding: "1rem",
-                    borderRadius: "16px",
+                    gap: "1rem",
+                    background: "#f8fafc",
+                    padding: "1.25rem",
+                    borderRadius: "18px",
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  {PERMISSIONS.map((perm) => (
-                    <label
-                      key={perm.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "0.75rem",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={form.permissions.includes(perm.id)}
-                        onChange={() => handlePermissionToggle(perm.id)}
-                        style={{
-                          width: "18px",
-                          height: "18px",
-                          borderRadius: "6px",
-                          border: "1px solid #cbd5e1",
-                          cursor: "pointer",
-                          marginTop: "0.15rem",
-                        }}
-                      />
-                      <div>
-                        <div style={{ fontSize: "0.875rem", fontWeight: 800, color: "#0f172a" }}>
-                          {perm.label}
+                  {PERMISSION_GROUPS.map((group) => (
+                    <section key={group.title} style={styles.permissionGroup}>
+                      <h4 style={styles.permissionGroupTitle}>{group.title}</h4>
+
+                      {group.permissions && (
+                        <div style={styles.permissionGrid}>
+                          {group.permissions.map((perm) => {
+                            const isChecked = form.permissions.includes(perm.id);
+                            return (
+                              <label 
+                                key={perm.id} 
+                                style={{
+                                  ...styles.permissionOption,
+                                  background: isChecked ? "rgba(124, 58, 237, 0.04)" : "#ffffff",
+                                  border: isChecked ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid #e2e8f0",
+                                  padding: "0.6rem 0.8rem",
+                                  borderRadius: "10px",
+                                  transition: "all 0.2s ease",
+                                }}
+                              >
+                                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => handlePermissionToggle(perm.id)}
+                                    style={{
+                                      ...styles.permissionCheckbox,
+                                      accentColor: "#7c3aed",
+                                      width: "16px",
+                                      height: "16px",
+                                    }}
+                                  />
+                                </div>
+                                <span style={{
+                                  ...styles.permissionOptionLabel,
+                                  color: isChecked ? "#7c3aed" : "#334155",
+                                  fontSize: "0.8rem",
+                                  fontWeight: isChecked ? 800 : 600,
+                                }}>
+                                  {perm.label}
+                                </span>
+                              </label>
+                            );
+                          })}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
-                          {perm.desc}
+                      )}
+
+                      {group.subgroups?.map((subgroup) => (
+                        <div key={subgroup.title} style={styles.permissionSubgroup}>
+                          <strong style={styles.permissionSubgroupTitle}>{subgroup.title}</strong>
+                          <div style={styles.permissionGrid}>
+                            {subgroup.permissions.map((perm) => {
+                              const isChecked = form.permissions.includes(perm.id);
+                              return (
+                                <label 
+                                  key={perm.id} 
+                                  style={{
+                                    ...styles.permissionOption,
+                                    background: isChecked ? "rgba(124, 58, 237, 0.04)" : "#ffffff",
+                                    border: isChecked ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid #e2e8f0",
+                                    padding: "0.6rem 0.8rem",
+                                    borderRadius: "10px",
+                                    transition: "all 0.2s ease",
+                                  }}
+                                >
+                                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => handlePermissionToggle(perm.id)}
+                                      style={{
+                                        ...styles.permissionCheckbox,
+                                        accentColor: "#7c3aed",
+                                        width: "16px",
+                                        height: "16px",
+                                      }}
+                                    />
+                                  </div>
+                                  <span style={{
+                                    ...styles.permissionOptionLabel,
+                                    color: isChecked ? "#7c3aed" : "#334155",
+                                    fontSize: "0.8rem",
+                                    fontWeight: isChecked ? 800 : 600,
+                                  }}>
+                                    {perm.label}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    </label>
+                      ))}
+                    </section>
                   ))}
                 </div>
               </div>

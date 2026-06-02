@@ -3,6 +3,9 @@ CREATE TABLE IF NOT EXISTS plans (
   name VARCHAR(120) NOT NULL,
   description TEXT NULL,
   price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  max_installments INT NOT NULL DEFAULT 1,
+  credits INT NOT NULL DEFAULT 0,
+  max_users INT NOT NULL DEFAULT 0,
   active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NULL,
   updated_at TIMESTAMP NULL
@@ -45,6 +48,8 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   role ENUM('MASTER','ADMIN','OPERATOR') NOT NULL,
   avatar VARCHAR(255) NULL,
+  phone VARCHAR(40) NULL,
+  credits INT NOT NULL DEFAULT 0,
   active TINYINT(1) NOT NULL DEFAULT 1,
   two_factor_enabled TINYINT(1) NOT NULL DEFAULT 0,
   two_factor_secret VARCHAR(64) NULL,

@@ -11,17 +11,82 @@ import {
   X,
   LayoutGrid,
   List,
+  Search,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import {
   createUser,
   deleteUser,
   listUsers,
   updateUser,
+  listCompanies,
+  getPlan,
+  getCompanyStats,
   type CreateUserPayload,
   type User,
+  type Company,
 } from "@/lib/api";
+import { getSession } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+// ── Tooltip via portal (bypasses overflow:hidden parents) ─────────────────────
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  const show = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setPos({
+      top: r.top + window.scrollY - 8,
+      left: r.left + window.scrollX + r.width / 2,
+    });
+  };
+  const hide = () => setPos(null);
+
+  return (
+    <div ref={ref} onMouseEnter={show} onMouseLeave={hide} style={{ display: "contents" }}>
+      {children}
+      {pos &&
+        createPortal(
+          <div
+            style={{
+              position: "absolute",
+              top: pos.top,
+              left: pos.left,
+              transform: "translate(-50%, -100%)",
+              background: "#0f172a",
+              color: "#f8fafc",
+              fontSize: "0.68rem",
+              fontWeight: 600,
+              padding: "0.28rem 0.55rem",
+              borderRadius: "7px",
+              whiteSpace: "nowrap",
+              boxShadow: "0 4px 12px rgba(15,23,42,0.22)",
+              pointerEvents: "none",
+              zIndex: 99999,
+              animation: "fadeIn 0.1s ease",
+            }}
+          >
+            {text}
+            <span
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                borderWidth: "4px",
+                borderStyle: "solid",
+                borderColor: "#0f172a transparent transparent transparent",
+              }}
+            />
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}
 
 type UsersTabProps = {
   accessToken: string;
@@ -40,7 +105,10 @@ type UserForm = {
   email: string;
   password: string;
   role: User["role"];
+  company_id: string; // Keep as string for select elements
   must_change_password: boolean;
+  phone: string;
+  credits: string;
 };
 
 const EMPTY_FORM: UserForm = {
@@ -48,7 +116,10 @@ const EMPTY_FORM: UserForm = {
   email: "",
   password: "",
   role: "OPERATOR",
+  company_id: "",
   must_change_password: true,
+  phone: "",
+  credits: "0",
 };
 
 const styles = {
@@ -60,15 +131,15 @@ const styles = {
   },
   hero: {
     position: "relative",
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 320px)",
-    gap: "1.5rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
     overflow: "hidden",
-    padding: "2rem",
+    padding: "1.5rem",
     border: "1px solid rgba(16, 185, 129, 0.16)",
     borderRadius: "28px",
     background:
-      "radial-gradient(circle at 8% 20%, rgba(16, 185, 129, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(59, 130, 246, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f9fbf9 52%, #f5f8ff 100%)",
+      "radial-gradient(circle at 8% 20%, rgba(16, 185, 129, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(59, 130, 246, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f9faf9 52%, #f5f8ff 100%)",
     boxShadow: "0 24px 70px rgba(15, 23, 42, 0.06)",
   },
   heroContent: {
@@ -77,8 +148,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: "1.25rem",
-    minHeight: "160px",
+    gap: "1rem",
+    minHeight: "0",
   },
   eyebrow: {
     display: "inline-flex",
@@ -153,42 +224,73 @@ const styles = {
     gap: "0.75rem",
     marginTop: "0.5rem",
   },
-  tableContainer: {
-    overflow: "hidden",
-    border: "1px solid #eef2f6",
-    borderRadius: "24px",
-    background: "#ffffff",
-    boxShadow: "0 16px 48px rgba(15, 23, 42, 0.04)",
+  toolbarRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "1rem 0",
+  },
+  toolbarActions: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.75rem",
+  },
+  filterPanel: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.75rem",
+    marginBottom: "1rem",
+  },
+  filterField: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.35rem",
+  },
+  filterLabel: {
+    color: "#475569",
+    fontSize: "0.72rem",
+    fontWeight: 700,
+  },
+  filterInput: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  filterSelect: {
+    width: "100%",
+    padding: "0.75rem 0.95rem",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    color: "#0f172a",
+    fontSize: "0.95rem",
+  },
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
     marginTop: "0.5rem",
   },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    textAlign: "left",
-  },
-  th: {
-    padding: "1.1rem 1.5rem",
-    background: "#f8fafc",
-    borderBottom: "1px solid #e2e8f0",
-    color: "#475569",
-    fontSize: "0.75rem",
-    fontWeight: 800,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-  tr: {
-    borderBottom: "1px solid #f1f5f9",
-    transition: "all 0.2s ease",
-  },
-  td: {
-    padding: "1rem 1.5rem",
-    verticalAlign: "middle",
-    color: "#334155",
-    fontSize: "0.9rem",
+  listRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    padding: "1rem 1.25rem",
+    border: "1px solid #eef2f6",
+    borderRadius: "18px",
+    background: "#ffffff",
+    boxShadow: "0 2px 10px rgba(15, 23, 42, 0.03)",
+    transition: "all 0.18s ease",
   },
   avatar: {
-    width: "40px",
-    height: "40px",
+    width: "42px",
+    height: "42px",
+    flexShrink: 0,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -196,15 +298,17 @@ const styles = {
     fontWeight: 850,
     fontSize: "0.95rem",
   },
-  userCell: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.85rem",
+  userInfo: {
+    flex: 1,
+    minWidth: 0,
   },
   userName: {
     fontWeight: 800,
     color: "#0f172a",
-    fontSize: "0.95rem",
+    fontSize: "0.93rem",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   warnLabel: {
     display: "inline-flex",
@@ -461,13 +565,24 @@ function normalizeUsersResponse(raw: unknown): User[] {
 
 export function UsersTab({ accessToken }: UsersTabProps) {
   const [users, setUsers] = useState<User[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const session = getSession();
+  const currentUserRole = session?.user?.role;
+  const currentUserCompanyId = session?.user?.company_id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<User["role"] | "">("");
+  const [companyFilter, setCompanyFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form, setForm] = useState<UserForm>(EMPTY_FORM);
+  const [companyPlanInfo, setCompanyPlanInfo] = useState<{ max_users?: number; credits?: number } | null>(null);
+  const [companyUserCount, setCompanyUserCount] = useState<number | null>(null);
+  const [companyAvailableCredits, setCompanyAvailableCredits] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -489,9 +604,21 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     }
   }, [accessToken]);
 
+  const fetchCompanies = useCallback(async () => {
+    try {
+      const res = await listCompanies(accessToken);
+      if (res && res.data) {
+        setCompanies(res.data);
+      }
+    } catch (err) {
+      console.warn("[UsersTab] Erro ao carregar empresas para dropdown:", err);
+    }
+  }, [accessToken]);
+
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchCompanies();
+  }, [fetchUsers, fetchCompanies]);
 
   useEffect(() => {
     if (modalMode) {
@@ -499,10 +626,40 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     }
   }, [modalMode]);
 
+  const filteredUsers = users.filter((user) => {
+    const search = searchTerm.trim().toLowerCase();
+    const searchMatch =
+      !search ||
+      [user.name, user.email, user.company_name, ROLE_LABELS[user.role]]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(search));
+
+    const roleMatch = !roleFilter || user.role === roleFilter;
+    const companyMatch = !companyFilter || String(user.company_id) === companyFilter;
+    const statusMatch =
+      statusFilter === "all" ||
+      (statusFilter === "active" ? user.active : !user.active);
+
+    return searchMatch && roleMatch && companyMatch && statusMatch;
+  });
+
   function openCreate() {
     setForm(EMPTY_FORM);
     setFormError(null);
     setEditingUser(null);
+    // If current user is ADMIN, preselect their company and role
+    const session = getSession();
+    if (session?.user?.role === "ADMIN") {
+      setForm((prev) => ({ ...prev, role: "OPERATOR", company_id: String(session.user.company_id ?? "") }));
+      // load plan info for their company
+      const compId = session.user.company_id;
+      if (compId) {
+        const comp = companies.find((c) => c.id === compId);
+        if (comp?.plan_id) {
+          getPlan(accessToken, comp.plan_id).then((res) => setCompanyPlanInfo(res.data ?? null)).catch(() => setCompanyPlanInfo(null));
+        }
+      }
+    }
     setModalMode("create");
   }
 
@@ -512,11 +669,25 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       email: user.email,
       password: "",
       role: user.role,
+      company_id: user.company_id ? String(user.company_id) : "",
       must_change_password: user.must_change_password,
+      phone: user.phone ?? "",
+      credits: String(user.credits ?? 0),
     });
     setFormError(null);
     setEditingUser(user);
     setModalMode("edit");
+    // load plan info for selected user's company
+    if (user.company_id) {
+      const comp = companies.find((c) => c.id === user.company_id);
+      if (comp?.plan_id) {
+        getPlan(accessToken, comp.plan_id).then((res) => setCompanyPlanInfo(res.data ?? null)).catch(() => setCompanyPlanInfo(null));
+      } else {
+        setCompanyPlanInfo(null);
+      }
+    } else {
+      setCompanyPlanInfo(null);
+    }
   }
 
   function closeModal() {
@@ -529,6 +700,26 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setFormError(null);
   }
+
+  // When company selection in modal changes, update plan info
+  useEffect(() => {
+    const compId = form.company_id ? Number(form.company_id) : null;
+    if (!compId) { setCompanyPlanInfo(null); return; }
+    const comp = companies.find((c) => c.id === compId);
+    if (comp?.plan_id) {
+      getPlan(accessToken, comp.plan_id).then((res) => setCompanyPlanInfo(res.data ?? null)).catch(() => setCompanyPlanInfo(null));
+    } else {
+      setCompanyPlanInfo(null);
+    }
+    // fetch company user count
+    getCompanyStats(accessToken, compId).then((res) => {
+      setCompanyUserCount(res.data?.user_count ?? null);
+      setCompanyAvailableCredits(res.data?.available_credits ?? null);
+    }).catch(() => {
+      setCompanyUserCount(null);
+      setCompanyAvailableCredits(null);
+    });
+  }, [form.company_id, companies, accessToken]);
 
   async function handleSave() {
     if (!form.name.trim()) {
@@ -548,12 +739,16 @@ export function UsersTab({ accessToken }: UsersTabProps) {
     setFormError(null);
 
     try {
+      const companyIdNum = form.company_id ? Number(form.company_id) : null;
       if (modalMode === "create") {
         const payload: CreateUserPayload = {
           name: form.name,
           email: form.email,
           password: form.password,
           role: form.role,
+          company_id: companyIdNum,
+          phone: form.phone || null,
+          credits: parseInt(form.credits || "0") || 0,
           must_change_password: form.must_change_password,
         };
         await createUser(accessToken, payload);
@@ -562,6 +757,9 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           name: form.name,
           email: form.email,
           role: form.role,
+          company_id: companyIdNum,
+          phone: form.phone || null,
+          credits: parseInt(form.credits || "0") || 0,
           must_change_password: form.must_change_password,
         };
         if (form.password) payload.password = form.password;
@@ -614,145 +812,188 @@ export function UsersTab({ accessToken }: UsersTabProps) {
       {/* Header */}
       <div className="overview-hero-card" style={styles.hero}>
         <div style={styles.heroContent}>
-          <div style={styles.eyebrow}>
-            <UserCheck size={14} aria-hidden="true" />
-            Controle de acesso
-          </div>
-          <div>
-            <h2 id="users-tab-title" style={styles.title}>
-              Usuários
-            </h2>
-            <p style={styles.subtitle}>
-              Gerencie a equipe, atribua perfis de acesso, audite segurança e monitore status de ativação em tempo real.
-            </p>
-          </div>
+          <h2 id="users-tab-title" className="sr-only">
+            Usuários
+          </h2>
         </div>
 
         <aside className="overview-hero-aside" style={styles.heroAside}>
-          <div style={styles.statsRow}>
-            <div style={styles.statCard}>
-              <span style={styles.statLabel}>Total</span>
-              <strong style={styles.statValue}>{users.length}</strong>
+          <div style={styles.filterPanel}>
+            <div style={styles.filterField}>
+              <label htmlFor="user-search" style={styles.filterLabel}>
+                Buscar
+              </label>
+              <input
+                id="user-search"
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Nome, e-mail, empresa ou papel"
+                style={styles.filterInput}
+              />
             </div>
-            <div style={styles.statCard}>
-              <span style={styles.statLabel}>Ativos</span>
-              <strong style={styles.statValue}>
-                {users.filter((u) => u.active).length}
-              </strong>
-            </div>
-          </div>
-
-          <div style={styles.actionsRow}>
-            {/* View Mode Toggle Segmented Control */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                background: "#f1f5f9",
-                borderRadius: "12px",
-                padding: "0.25rem",
-                border: "1px solid #e2e8f0",
-                flex: 1,
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  flex: 1,
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: viewMode === "list" ? "#ffffff" : "transparent",
-                  color: viewMode === "list" ? "#0f172a" : "#64748b",
-                  boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
+            <div style={styles.filterField}>
+              <label htmlFor="user-role" style={styles.filterLabel}>
+                Perfil
+              </label>
+              <select
+                id="user-role"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value as User["role"] | "")}
+                style={styles.filterSelect}
               >
-                <List size={14} />
-                Lista
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  flex: 1,
-                  padding: "0.45rem 0.65rem",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: viewMode === "grid" ? "#ffffff" : "transparent",
-                  color: viewMode === "grid" ? "#0f172a" : "#64748b",
-                  boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <LayoutGrid size={14} />
-                Cards
-              </button>
+                <option value="">Todos os perfis</option>
+                <option value="MASTER">Master</option>
+                <option value="ADMIN">Administrador</option>
+                <option value="OPERATOR">Operador</option>
+              </select>
             </div>
-
-            <button
-              className="secondary-button"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.58rem 0.65rem",
-                borderRadius: "12px",
-                fontSize: "0.78rem",
-                fontWeight: 850,
-                cursor: "pointer",
-                justifyContent: "center",
-                border: "1px solid #cbd5e1",
-                background: "#ffffff",
-                color: "#334155",
-              }}
-              onClick={fetchUsers}
-              disabled={loading}
-              type="button"
-              aria-label="Recarregar lista"
-            >
-              <RefreshCw size={14} className={cn(loading && "spinner")} aria-hidden="true" />
-            </button>
-            <button
-              className="primary-button"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.58rem 0.9rem",
-                borderRadius: "12px",
-                fontSize: "0.78rem",
-                fontWeight: 850,
-                cursor: "pointer",
-                justifyContent: "center",
-                background: "linear-gradient(135deg, #059669, #10b981)",
-                color: "#ffffff",
-                border: "none",
-                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
-              }}
-              onClick={openCreate}
-              type="button"
-              id="btn-create-user"
-            >
-              <Plus size={16} aria-hidden="true" />
-            </button>
+            <div style={styles.filterField}>
+              <label htmlFor="user-company" style={styles.filterLabel}>
+                Empresa
+              </label>
+              <select
+                id="user-company"
+                value={companyFilter}
+                onChange={(e) => setCompanyFilter(e.target.value)}
+                style={styles.filterSelect}
+              >
+                <option value="">Todas as empresas</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={String(company.id)}>
+                    {company.company_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={styles.filterField}>
+              <label htmlFor="user-status" style={styles.filterLabel}>
+                Status
+              </label>
+              <select
+                id="user-status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                style={styles.filterSelect}
+              >
+                <option value="all">Todos</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+              </select>
+            </div>
           </div>
         </aside>
+
+        <div style={styles.toolbarRow}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              background: "#f1f5f9",
+              borderRadius: "12px",
+              padding: "0.25rem",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.35rem",
+              padding: "0.45rem 0.65rem",
+              borderRadius: "9px",
+              border: "none",
+              background: viewMode === "list" ? "#ffffff" : "transparent",
+              color: viewMode === "list" ? "#0f172a" : "#64748b",
+              boxShadow: viewMode === "list" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+              fontSize: "0.75rem",
+              fontWeight: 800,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <List size={14} />
+            Lista
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.35rem",
+              padding: "0.45rem 0.65rem",
+              borderRadius: "9px",
+              border: "none",
+              background: viewMode === "grid" ? "#ffffff" : "transparent",
+              color: viewMode === "grid" ? "#0f172a" : "#64748b",
+              boxShadow: viewMode === "grid" ? "0 2px 8px rgba(15, 23, 42, 0.05)" : "none",
+              fontSize: "0.75rem",
+              fontWeight: 800,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <LayoutGrid size={14} />
+            Cards
+          </button>
+        </div>
+
+        <div style={styles.toolbarActions}>
+          <button
+            className="secondary-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              padding: "0.58rem 0.65rem",
+              borderRadius: "12px",
+              fontSize: "0.78rem",
+              fontWeight: 850,
+              cursor: "pointer",
+              justifyContent: "center",
+              border: "1px solid #cbd5e1",
+              background: "#ffffff",
+              color: "#334155",
+            }}
+            onClick={fetchUsers}
+            disabled={loading}
+            type="button"
+            aria-label="Recarregar lista"
+            data-tooltip="Recarregar"
+          >
+            <RefreshCw size={14} className={cn(loading && "spinner")} aria-hidden="true" />
+          </button>
+          <button
+            className="primary-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              padding: "0.58rem 0.9rem",
+              borderRadius: "12px",
+              fontSize: "0.78rem",
+              fontWeight: 850,
+              cursor: "pointer",
+              justifyContent: "center",
+              background: "linear-gradient(135deg, #059669, #10b981)",
+              color: "#ffffff",
+              border: "none",
+              boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
+            }}
+            onClick={openCreate}
+            type="button"
+            id="btn-create-user"
+            data-tooltip="Novo usuário"
+          >
+            <Plus size={16} aria-hidden="true" />
+          </button>
+        </div>
+        </div>
       </div>
 
       {/* Error banner */}
@@ -856,6 +1097,44 @@ export function UsersTab({ accessToken }: UsersTabProps) {
             <Plus size={14} aria-hidden="true" /> Criar primeiro usuário
           </button>
         </div>
+      ) : filteredUsers.length === 0 ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "1.25rem",
+            padding: "4rem 2rem",
+            background: "#ffffff",
+            border: "1px solid #eef2f6",
+            borderRadius: "24px",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: "64px",
+              height: "64px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "20px",
+              background: "rgba(100, 116, 139, 0.08)",
+              color: "#64748b",
+            }}
+          >
+            <Search size={32} aria-hidden="true" />
+          </div>
+          <div>
+            <h4 style={{ margin: 0, color: "#0f172a", fontSize: "1.1rem", fontWeight: 800 }}>
+              Nenhum usuário encontrado
+            </h4>
+            <p style={{ margin: "0.25rem 0 0", color: "#64748b", fontSize: "0.9rem" }}>
+              Ajuste os filtros para encontrar usuários ativos ou inativos.
+            </p>
+          </div>
+        </div>
       ) : viewMode === "grid" ? (
         <div style={styles.gridContainer} role="region" aria-label="Lista de usuários em cards">
           {users.map((user) => {
@@ -908,6 +1187,12 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                     {user.email}
                   </span>
 
+                  {user.phone && (
+                    <div style={{ color: "#64748b", fontSize: "0.85rem", marginTop: "0.25rem" }} title={user.phone}>
+                      {user.phone}
+                    </div>
+                  )}
+
                   <div style={styles.cardBadges}>
                     <span
                       style={{
@@ -928,6 +1213,18 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                       }}
                     >
                       2FA: {user.two_factor_enabled ? "ON" : "OFF"}
+                    </span>
+                    <span
+                      style={{
+                        ...badgeBaseStyle,
+                        background: "rgba(148, 163, 184, 0.08)",
+                        border: "1px solid rgba(148, 163, 184, 0.18)",
+                        color: "#475569",
+                        fontSize: "0.65rem",
+                        padding: "0.15rem 0.45rem",
+                      }}
+                    >
+                      🏢 {user.company_name || "Sem empresa"}
                     </span>
                   </div>
 
@@ -954,73 +1251,20 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                       onClick={() => openEdit(user)}
                       type="button"
                       aria-label={`Editar ${user.name}`}
+                      data-tooltip="Editar"
                     >
                       <Edit2 size={13} aria-hidden="true" />
                     </button>
-                    {confirmDeleteId === user.id ? (
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.25rem",
-                          background: "#fef2f2",
-                          border: "1px solid #fee2e2",
-                          padding: "0.2rem 0.4rem",
-                          borderRadius: "8px",
-                          animation: "fadeIn 0.15s ease",
-                        }}
-                      >
-                        <button
-                          className="icon-button"
-                          style={{
-                            ...actionBtnDangerStyle,
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#ef4444",
-                            color: "#ffffff",
-                          }}
-                          onClick={() => handleDelete(user.id)}
-                          disabled={deletingId === user.id}
-                          type="button"
-                          aria-label="Confirmar exclusão"
-                        >
-                          {deletingId === user.id ? (
-                            <Loader2 size={10} className="spinner" />
-                          ) : (
-                            <Trash2 size={10} />
-                          )}
-                        </button>
-                        <button
-                          className="icon-button"
-                          style={{
-                            ...actionBtnStyle,
-                            width: "24px",
-                            height: "24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#e2e8f0",
-                            color: "#475569",
-                          }}
-                          onClick={() => setConfirmDeleteId(null)}
-                          type="button"
-                          aria-label="Cancelar exclusão"
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        className="icon-button"
-                        style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
-                        onClick={() => setConfirmDeleteId(user.id)}
-                        type="button"
-                        aria-label={`Excluir ${user.name}`}
-                      >
-                        <Trash2 size={13} aria-hidden="true" />
-                      </button>
-                    )}
+                    <button
+                      className="icon-button"
+                      style={{ ...actionBtnDangerStyle, width: "30px", height: "30px", borderRadius: "8px" }}
+                      onClick={() => setConfirmDeleteId(user.id)}
+                      type="button"
+                      aria-label={`Excluir ${user.name}`}
+                      data-tooltip="Excluir"
+                    >
+                      <Trash2 size={13} aria-hidden="true" />
+                    </button>
                   </div>
                 </div>
               </article>
@@ -1028,190 +1272,244 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           })}
         </div>
       ) : (
-        <div style={styles.tableContainer} role="region" aria-label="Lista de usuários" tabIndex={0}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col" style={styles.th}>Nome</th>
-                <th scope="col" style={styles.th}>E-mail</th>
-                <th scope="col" style={styles.th}>Perfil</th>
-                <th scope="col" style={styles.th}>Status</th>
-                <th scope="col" style={styles.th}>2FA</th>
-                <th scope="col" style={{ ...styles.th, textAlign: "right" }}><span className="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => {
-                const avatarTheme = AVATAR_THEMES[user.role] ?? AVATAR_THEMES.OPERATOR;
-                return (
-                  <tr key={user.id} style={styles.tr} className="table-row-hover">
-                    <td style={styles.td}>
-                      <div style={styles.userCell}>
-                        <div
-                          style={{
-                            ...styles.avatar,
-                            background: avatarTheme.bg,
-                            color: avatarTheme.color,
-                          }}
-                          aria-hidden="true"
-                        >
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={styles.userName}>{user.name}</div>
-                          {user.must_change_password && (
-                            <div style={styles.warnLabel}>
-                              <span style={{ fontSize: "0.8rem" }}>🔑</span> Troca de senha pendente
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ ...styles.td, color: "#64748b", fontWeight: 500 }}>{user.email}</td>
-                    <td style={styles.td}>
-                      <span
-                        style={{
-                          ...badgeBaseStyle,
-                          ...(PILL_STYLES[user.role.toLowerCase()] ?? PILL_STYLES.operator),
-                        }}
-                      >
-                        {ROLE_LABELS[user.role]}
+        <div style={styles.listContainer} role="region" aria-label="Lista de usuários">
+          {users.map((user) => {
+            const avatarTheme = AVATAR_THEMES[user.role] ?? AVATAR_THEMES.OPERATOR;
+            return (
+              <div
+                key={user.id}
+                style={{
+                  ...styles.listRow,
+                  opacity: user.active ? 1 : 0.65,
+                }}
+                className="table-row-hover"
+              >
+                {/* Avatar with active indicator */}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div
+                    style={{
+                      ...styles.avatar,
+                      background: avatarTheme.bg,
+                      color: avatarTheme.color,
+                    }}
+                    aria-hidden="true"
+                  >
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: "-2px",
+                      right: "-2px",
+                      width: "11px",
+                      height: "11px",
+                      borderRadius: "50%",
+                      border: "2px solid #ffffff",
+                      background: user.active ? "#10b981" : "#ef4444",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                    }}
+                    title={user.active ? "Ativo" : "Inativo"}
+                  />
+                </div>
+
+                {/* User info */}
+                <div style={styles.userInfo}>
+                  <div style={styles.userName}>{user.name}</div>
+                  <div style={{ color: "#64748b", fontSize: "0.8rem", fontWeight: 500, marginTop: "0.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {user.email}
+                  </div>
+                  {user.phone && (
+                    <div style={{ color: "#64748b", fontSize: "0.78rem", marginTop: "0.15rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {user.phone}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.35rem", alignItems: "center", flexWrap: "wrap" }}>
+                    <span
+                      style={{
+                        ...badgeBaseStyle,
+                        ...(PILL_STYLES[user.role.toLowerCase()] ?? PILL_STYLES.operator),
+                        fontSize: "0.6rem",
+                        padding: "0.1rem 0.45rem",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      {ROLE_LABELS[user.role]}
+                    </span>
+                    {user.company_name && (
+                      <span style={{
+                        ...badgeBaseStyle,
+                        background: "rgba(148, 163, 184, 0.07)",
+                        border: "1px solid rgba(148, 163, 184, 0.15)",
+                        color: "#64748b",
+                        fontSize: "0.6rem",
+                        padding: "0.1rem 0.45rem",
+                        borderRadius: "6px",
+                        textTransform: "none",
+                        letterSpacing: "0",
+                        fontWeight: 600,
+                      }}>
+                        🏢 {user.company_name}
                       </span>
-                    </td>
-                    <td style={styles.td}>
-                      {user.active ? (
-                        <span
-                          style={{
-                            ...badgeBaseStyle,
-                            ...PILL_STYLES.active,
-                          }}
-                        >
-                          <UserCheck size={12} aria-hidden="true" /> Ativo
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            ...badgeBaseStyle,
-                            ...PILL_STYLES.inactive,
-                          }}
-                        >
-                          <UserX size={12} aria-hidden="true" /> Inativo
-                        </span>
-                      )}
-                    </td>
-                    <td style={styles.td}>
-                      {user.two_factor_enabled ? (
-                        <span
-                          style={{
-                            ...badgeBaseStyle,
-                            ...PILL_STYLES["2fa-on"],
-                          }}
-                        >
-                          ON
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            ...badgeBaseStyle,
-                            ...PILL_STYLES["2fa-off"],
-                          }}
-                        >
-                          OFF
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ ...styles.td, textAlign: "right" }}>
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          justifyContent: "flex-end",
-                        }}
-                      >
-                        <button
-                          className="icon-button"
-                          style={actionBtnStyle}
-                          onClick={() => openEdit(user)}
-                          type="button"
-                          aria-label={`Editar ${user.name}`}
-                        >
-                          <Edit2 size={14} aria-hidden="true" />
-                        </button>
-                        {confirmDeleteId === user.id ? (
-                          <div
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "0.35rem",
-                              background: "#fef2f2",
-                              border: "1px solid #fee2e2",
-                              padding: "0.25rem 0.5rem",
-                              borderRadius: "10px",
-                              animation: "fadeIn 0.15s ease",
-                            }}
-                          >
-                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ef4444", paddingRight: "0.15rem" }}>
-                              Excluir?
-                            </span>
-                            <button
-                              className="icon-button"
-                              style={{
-                                ...actionBtnDangerStyle,
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#ef4444",
-                                color: "#ffffff",
-                              }}
-                              onClick={() => handleDelete(user.id)}
-                              disabled={deletingId === user.id}
-                              type="button"
-                              aria-label="Confirmar exclusão"
-                            >
-                              {deletingId === user.id ? (
-                                <Loader2 size={12} className="spinner" />
-                              ) : (
-                                <Trash2 size={12} />
-                              )}
-                            </button>
-                            <button
-                              className="icon-button"
-                              style={{
-                                ...actionBtnStyle,
-                                width: "26px",
-                                height: "26px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#e2e8f0",
-                                color: "#475569",
-                              }}
-                              onClick={() => setConfirmDeleteId(null)}
-                              type="button"
-                              aria-label="Cancelar exclusão"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            className="icon-button"
-                            style={actionBtnDangerStyle}
-                            onClick={() => setConfirmDeleteId(user.id)}
-                            type="button"
-                            aria-label={`Excluir ${user.name}`}
-                          >
-                            <Trash2 size={14} aria-hidden="true" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    )}
+                    {user.must_change_password && (
+                      <span style={{
+                        ...badgeBaseStyle,
+                        background: "rgba(217, 119, 6, 0.08)",
+                        border: "1px solid rgba(217, 119, 6, 0.18)",
+                        color: "#d97706",
+                        fontSize: "0.6rem",
+                        padding: "0.1rem 0.45rem",
+                        borderRadius: "6px",
+                      }}>
+                        🔑 Trocar senha
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2FA badge */}
+                <div style={{ flexShrink: 0 }}>
+                  {user.two_factor_enabled ? (
+                    <span
+                      title="2FA ativo"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "8px",
+                        background: "rgba(16, 185, 129, 0.1)",
+                        border: "1px solid rgba(16, 185, 129, 0.2)",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      🔐
+                    </span>
+                  ) : (
+                    <span
+                      title="2FA inativo"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "8px",
+                        background: "rgba(148, 163, 184, 0.06)",
+                        border: "1px solid rgba(148, 163, 184, 0.14)",
+                        fontSize: "0.85rem",
+                        opacity: 0.45,
+                      }}
+                    >
+                      🔓
+                    </span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+                  <button
+                    className="icon-button"
+                    style={actionBtnStyle}
+                    onClick={() => openEdit(user)}
+                    type="button"
+                    aria-label={`Editar ${user.name}`}
+                    data-tooltip="Editar"
+                  >
+                    <Edit2 size={14} aria-hidden="true" />
+                  </button>
+                  <button
+                    className="icon-button"
+                    style={actionBtnDangerStyle}
+                    onClick={() => setConfirmDeleteId(user.id)}
+                    type="button"
+                    aria-label={`Excluir ${user.name}`}
+                    data-tooltip="Excluir"
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {confirmDeleteId !== null && (
+        <div
+          style={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmDeleteId(null);
+          }}
+        >
+          <div style={styles.modal}>
+            <div style={styles.modalHeader}>
+              <h3 id="delete-dialog-title" style={styles.modalTitle}>
+                Confirmar exclusão
+              </h3>
+              <button
+                className="icon-button"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  border: "1px solid #e2e8f0",
+                  background: "#ffffff",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+                aria-label="Fechar diálogo de exclusão"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={styles.modalBody}>
+              <p style={{ margin: 0, color: "#334155", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
+              </p>
+              <p style={{ margin: "0.75rem 0 0", color: "#64748b", fontSize: "0.88rem" }}>
+                {users.find((user) => user.id === confirmDeleteId)?.name ?? "Usuário"}
+              </p>
+            </div>
+            <div style={styles.modalFooter}>
+              <button
+                className="secondary-button"
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                className="primary-button"
+                onClick={() => handleDelete(confirmDeleteId)}
+                disabled={deletingId === confirmDeleteId}
+                type="button"
+                style={{
+                  background: "#dc2626",
+                  color: "#ffffff",
+                  border: "none",
+                  minWidth: "120px",
+                }}
+              >
+                {deletingId === confirmDeleteId ? (
+                  <>
+                    <Loader2 size={14} className="spinner" aria-hidden="true" /> Excluindo…
+                  </>
+                ) : (
+                  "Excluir usuário"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1229,7 +1527,7 @@ export function UsersTab({ accessToken }: UsersTabProps) {
           <div style={styles.modal}>
             <div style={styles.modalHeader}>
               <h3 id="modal-title" style={styles.modalTitle}>
-                {modalMode === "create" ? "✨ Novo Usuário" : "✍️ Editar Usuário"}
+                {modalMode === "create" ? " Novo Usuário" : " Editar Usuário"}
               </h3>
               <button
                 className="icon-button"
@@ -1281,6 +1579,19 @@ export function UsersTab({ accessToken }: UsersTabProps) {
               </div>
 
               <div style={styles.fieldGroup}>
+                <label htmlFor="user-phone" style={styles.label}>Telefone</label>
+                <input
+                  id="user-phone"
+                  style={styles.input}
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  placeholder="(11) 91234-5678"
+                  autoComplete="tel"
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
                 <label htmlFor="user-password" style={styles.label}>
                   {modalMode === "edit" ? "Nova senha (deixe em branco para manter)" : "Senha"}
                 </label>
@@ -1313,9 +1624,52 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                 >
                   <option value="OPERATOR">Operador</option>
                   <option value="ADMIN">Administrador</option>
-                  <option value="MASTER">Master</option>
+                  <option value="MASTER" disabled={currentUserRole === "ADMIN"}>Master</option>
                 </select>
               </div>
+
+              <div style={styles.fieldGroup}>
+                <label htmlFor="user-company" style={styles.label}>Empresa vinculada</label>
+                <select
+                  id="user-company"
+                  style={{
+                    ...styles.input,
+                    appearance: "none",
+                    backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 1rem center",
+                    backgroundSize: "1.2rem",
+                    paddingRight: "2.5rem",
+                  }}
+                  value={form.company_id}
+                  onChange={(e) => updateField("company_id", e.target.value)}
+                  disabled={currentUserRole === "ADMIN"}
+                >
+                  <option value="">Sem empresa (Vínculo Master/Geral)</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={String(company.id)}>
+                      {company.company_name} {company.trade_name ? `(${company.trade_name})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {companyPlanInfo && (
+                <div style={{ color: "#64748b", fontSize: "0.9rem", marginTop: "0.25rem" }}>
+                  Limite de usuários do plano: <strong style={{ color: "#0f172a" }}>{companyPlanInfo.max_users ?? 0}</strong>
+                  {" — "}
+                  Créditos do plano: <strong style={{ color: "#0f172a" }}>{companyPlanInfo.credits ?? 0}</strong>
+                </div>
+              )}
+
+              {companyUserCount !== null && (
+                <div style={{ color: "#475569", fontSize: "0.92rem", marginTop: "0.35rem" }}>
+                  Usuários cadastrados nesta empresa: <strong style={{ color: "#0f172a" }}>{companyUserCount}</strong>
+                  {companyAvailableCredits !== null && (
+                    <span> — Crédito disponível: <strong style={{ color: "#0f172a" }}>{companyAvailableCredits}</strong></span>
+                  )}
+                </div>
+              )}
 
               <label
                 style={{
@@ -1343,6 +1697,19 @@ export function UsersTab({ accessToken }: UsersTabProps) {
                   Exigir troca de senha no próximo login
                 </span>
               </label>
+
+              <div style={{ ...styles.fieldGroup, marginTop: "0.5rem" }}>
+                <label htmlFor="user-credits" style={styles.label}>Créditos</label>
+                <input
+                  id="user-credits"
+                  type="number"
+                  min="0"
+                  step="1"
+                  style={styles.input}
+                  value={form.credits}
+                  onChange={(e) => updateField("credits", e.target.value)}
+                />
+              </div>
 
               {formError && (
                 <div

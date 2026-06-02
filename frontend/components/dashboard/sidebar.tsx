@@ -2,14 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  Activity,
   Award,
   Building2,
+  ChevronDown,
   ChevronUp,
+  ClipboardList,
   LayoutDashboard,
   LogOut,
-  Settings,
-  Shield,
   UserCircle,
   Users,
 } from "lucide-react";
@@ -37,12 +36,17 @@ type SidebarProps = {
   onToggle: () => void;
 };
 
-const NAV_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; roles?: string[] }[] = [
+// Top-level nav items (non-grouped)
+const TOP_NAV_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; roles?: string[] }[] = [
   { tab: "overview", label: "Visão Geral", icon: LayoutDashboard },
-  { tab: "users", label: "Usuários", icon: Users, roles: ["MASTER", "ADMIN"] },
-  { tab: "company", label: "Minha Empresa", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
+];
+
+// Items grouped under "Cadastro" dropdown
+const CADASTRO_ITEMS: { tab: DashboardTab; label: string; icon: React.ElementType; roles?: string[] }[] = [
+  { tab: "users",     label: "Usuários", icon: Users,     roles: ["MASTER", "ADMIN"] },
   { tab: "companies", label: "Empresas", icon: Building2, roles: ["MASTER"] },
-  { tab: "plans", label: "Planos", icon: Award, roles: ["MASTER"] },
+  { tab: "company",   label: "Minha Empresa", icon: Building2, roles: ["ADMIN", "OPERATOR"] },
+  { tab: "plans",     label: "Planos",   icon: Award,     roles: ["MASTER"] },
 ];
 
 export function Sidebar({
@@ -58,6 +62,7 @@ export function Sidebar({
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [spotlightOpacity, setSpotlightOpacity] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [cadastroOpen, setCadastroOpen] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -81,9 +86,15 @@ export function Sidebar({
 
   const role = session.user.role;
 
-  const visibleItems = NAV_ITEMS.filter(
+  const visibleTopItems = TOP_NAV_ITEMS.filter(
     (item) => !item.roles || item.roles.includes(role)
   );
+
+  const visibleCadastroItems = CADASTRO_ITEMS.filter(
+    (item) => !item.roles || item.roles.includes(role)
+  );
+
+  const isCadastroActive = visibleCadastroItems.some((item) => item.tab === activeTab);
 
   const initials = session.user.name
     .split(" ")
@@ -103,7 +114,7 @@ export function Sidebar({
     });
   };
 
-  // Close dropdown when clicking outside
+  // Close user dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -169,7 +180,8 @@ export function Sidebar({
         aria-label="Menu principal"
         style={{ position: "relative", zIndex: 10 }}
       >
-        {visibleItems.map(({ tab, label, icon: Icon }) => (
+        {/* Top-level items */}
+        {visibleTopItems.map(({ tab, label, icon: Icon }) => (
           <button
             key={tab}
             className={cn("db-sidebar__item", activeTab === tab && "db-sidebar__item--active")}
@@ -182,6 +194,86 @@ export function Sidebar({
             {!isVisualCollapsed && <span>{label}</span>}
           </button>
         ))}
+
+        {/* Cadastro dropdown (only render if user has access to any child) */}
+        {visibleCadastroItems.length > 0 && (
+          <div>
+            {/* Dropdown trigger */}
+            <button
+              type="button"
+              title={isVisualCollapsed ? "Cadastro" : undefined}
+              className={cn(
+                "db-sidebar__item",
+                isCadastroActive && "db-sidebar__item--active"
+              )}
+              style={{ justifyContent: "space-between" }}
+              onClick={() => setCadastroOpen((v) => !v)}
+              aria-expanded={cadastroOpen}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                <ClipboardList size={20} aria-hidden="true" />
+                {!isVisualCollapsed && <span>Cadastro</span>}
+              </span>
+              {!isVisualCollapsed && (
+                <ChevronDown
+                  size={15}
+                  aria-hidden="true"
+                  style={{
+                    flexShrink: 0,
+                    color: "#64748b",
+                    transition: "transform 0.22s ease",
+                    transform: cadastroOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  }}
+                />
+              )}
+            </button>
+
+            {/* Sub-items */}
+            {cadastroOpen && !isVisualCollapsed && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.25rem",
+                  marginLeft: "1.25rem",
+                  paddingLeft: "0.85rem",
+                  marginTop: "0.25rem",
+                  marginBottom: "0.5rem",
+                  borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
+                  animation: "dropdownFadeIn 0.18s ease",
+                }}
+              >
+                {visibleCadastroItems.map(({ tab, label, icon: Icon }) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={cn(
+                      "db-sidebar__item",
+                      activeTab === tab && "db-sidebar__item--active"
+                    )}
+                    style={{ 
+                      fontSize: "0.825rem", 
+                      paddingTop: "0.45rem", 
+                      paddingBottom: "0.45rem",
+                      paddingLeft: "0.75rem",
+                      height: "34px",
+                      borderRadius: "6px",
+                      opacity: activeTab === tab ? 1 : 0.8,
+                    }}
+                    onClick={() => {
+                      onTabChange(tab);
+                      setCadastroOpen(true);
+                    }}
+                    aria-current={activeTab === tab ? "page" : undefined}
+                  >
+                    <Icon size={15} aria-hidden="true" style={{ opacity: 0.9 }} />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* Footer: user dropdown */}
@@ -275,8 +367,6 @@ export function Sidebar({
               <UserCircle size={16} aria-hidden="true" />
               Meu Perfil
             </button>
-
-
 
             {/* Divider */}
             <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "0.25rem 0" }} />
@@ -391,3 +481,4 @@ export function Sidebar({
     </aside>
   );
 }
+
