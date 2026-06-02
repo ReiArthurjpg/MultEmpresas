@@ -131,11 +131,11 @@ export default function DashboardPage() {
       />
 
       <main
-        className="db-main"
+        className={`db-main ${activeTab === "profile" ? "db-main--profile" : ""}`}
         id="main-content"
         aria-label="Conteúdo principal"
       >
-        <div className="db-main__inner">
+        <div className={`db-main__inner ${activeTab === "profile" ? "db-main__inner--profile" : ""}`}>
           {activeTab === "overview" && <OverviewTab session={session} onNavigate={setActiveTab} />}
 
           {activeTab === "users" && canManageUsers && (

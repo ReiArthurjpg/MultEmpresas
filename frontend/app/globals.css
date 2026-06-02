@@ -1374,3 +1374,29 @@ a {
 .db-main__inner {
   max-width: 1180px;
 }
+
+/* Profile page must keep the same dark premium canvas as the login reference. */
+.db-main--profile {
+  background:
+    radial-gradient(circle at 88% 0%, rgba(212, 175, 55, 0.10), transparent 28rem),
+    radial-gradient(circle at 12% 100%, rgba(59, 130, 246, 0.05), transparent 28rem),
+    #030508;
+  color: #ffffff;
+}
+
+.db-main__inner--profile {
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1.25rem, 5vw, 4rem);
+}
+
+.profile-premium-screen {
+  min-height: calc(100vh - 5rem);
+}
+
+@media (max-width: 768px) {
+  .db-main__inner--profile {
+    padding: 1.25rem;
+  }
+}

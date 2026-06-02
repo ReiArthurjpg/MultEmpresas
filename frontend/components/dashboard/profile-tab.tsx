@@ -309,7 +309,7 @@ export function ProfileTab({
   );
 
   return (
-    <section className="relative isolate flex w-full flex-col gap-6 text-white" aria-labelledby="profile-tab-title">
+    <section className="profile-premium-screen relative isolate flex w-full flex-col gap-6 text-white" aria-labelledby="profile-tab-title">
       <div className="pointer-events-none absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-[#D4AF37]/10 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-40 left-1/4 -z-10 h-80 w-80 rounded-full bg-blue-500/[0.04] blur-[120px]" />
 
