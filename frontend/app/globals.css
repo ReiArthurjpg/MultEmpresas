@@ -521,7 +521,7 @@ a {
   --sb-accent-glow:  #38bdf84d; /* Glow do acento */
   --sb-toggle-bg:    #1a2540;
   --sb-toggle-text:  #64748b;
-  --sb-avatar-from:  #0ea5e9;
+  --sb-avatar-from:  #D4AF37;
   --sb-avatar-to:    #6366f1;
 }
 
@@ -674,7 +674,7 @@ a {
   font-size: 0.75rem;
   font-weight: 800;
   flex-shrink: 0;
-  box-shadow: 0 2px 10px -2px #0ea5e955;
+  box-shadow: 0 2px 10px -2px #D4AF3755;
 }
 
 .db-sidebar__user-info {

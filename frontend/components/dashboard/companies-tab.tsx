@@ -77,10 +77,10 @@ const styles = {
     gap: "1rem",
     overflow: "hidden",
     padding: "1.5rem",
-    border: "1px solid rgba(14, 165, 233, 0.16)",
+    border: "1px solid rgba(212, 175, 55, 0.16)",
     borderRadius: "28px",
     background:
-      "radial-gradient(circle at 8% 20%, rgba(14, 165, 233, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(124, 58, 237, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f7fbfd 52%, #fcfaff 100%)",
+      "radial-gradient(circle at 8% 20%, rgba(212, 175, 55, 0.15), transparent 35%), radial-gradient(circle at 92% 12%, rgba(124, 58, 237, 0.14), transparent 30%), linear-gradient(135deg, #ffffff 0%, #f7fbfd 52%, #fcfaff 100%)",
     boxShadow: "0 24px 70px rgba(15, 23, 42, 0.06)",
   },
   heroContent: {
@@ -254,8 +254,8 @@ const styles = {
     width: "42px",
     height: "42px",
     borderRadius: "12px",
-    background: "rgba(14, 165, 233, 0.08)",
-    border: "1px solid rgba(14, 165, 233, 0.18)",
+    background: "rgba(212, 175, 55, 0.08)",
+    border: "1px solid rgba(212, 175, 55, 0.18)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -473,9 +473,9 @@ const PILL_STYLES: Record<string, CSSProperties> = {
     color: "#6d28d9",
   },
   stateBadge: {
-    background: "rgba(14, 165, 233, 0.08)",
-    border: "1px solid rgba(14, 165, 233, 0.18)",
-    color: "#0284c7",
+    background: "rgba(212, 175, 55, 0.08)",
+    border: "1px solid rgba(212, 175, 55, 0.18)",
+    color: "#D4AF37",
   },
 };
 
@@ -924,10 +924,10 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                 fontWeight: 850,
                 cursor: "pointer",
                 justifyContent: "center",
-                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
-                color: "#ffffff",
-                border: "none",
-                boxShadow: "0 4px 12px rgba(14, 165, 233, 0.2)",
+                background: "linear-gradient(135deg, #0284c7, #D4AF37)",
+                      color: "#ffffff",
+                      border: "none",
+                      boxShadow: "0 4px 12px rgba(212, 175, 55, 0.2)",
               }}
               onClick={openCreate}
               type="button"
@@ -1030,7 +1030,7 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                 fontSize: "0.85rem",
                 fontWeight: 800,
                 cursor: "pointer",
-                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                background: "linear-gradient(135deg, #0284c7, #D4AF37)",
                 color: "#ffffff",
                 border: "none",
               }}
@@ -1456,12 +1456,12 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                     style={{
                       padding: "0.75rem 1.25rem",
                       borderRadius: "12px",
-                      background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                      background: "linear-gradient(135deg, #0284c7, #D4AF37)",
                       color: "#ffffff",
                       border: "none",
                       fontWeight: 800,
                       cursor: "pointer",
-                      boxShadow: "0 4px 12px rgba(14, 165, 233, 0.2)",
+                      boxShadow: "0 4px 12px rgba(212, 175, 55, 0.2)",
                     }}
                     onClick={handleCNPJLookup}
                     disabled={checkingCnpj || form.cnpj.length < 14}
@@ -1673,7 +1673,7 @@ export function CompaniesTab({ accessToken }: CompaniesTabProps) {
                   fontSize: "0.85rem",
                   fontWeight: 800,
                   cursor: "pointer",
-                  background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                  background: "linear-gradient(135deg, #0284c7, #D4AF37)",
                   color: "#ffffff",
                   border: "none",
                   boxShadow: "0 4px 12px rgba(14, 165, 233, 0.2)",
