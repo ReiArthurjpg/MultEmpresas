@@ -317,6 +317,7 @@ export function ProfileTab({
     }
   }, [twofaPhase]);
 
+
   const reset2FAState = () => {
     setTwofaPhase("idle");
     setTwofaSetupData(null);
@@ -345,6 +346,16 @@ export function ProfileTab({
     }
   }
 
+  function copySecretToClipboard() {
+    if (!twofaSetupData?.secret || typeof navigator === "undefined" || !navigator.clipboard) return;
+    navigator.clipboard.writeText(twofaSetupData.secret).then(() => {
+      setTwofaSuccessMsg("Chave copiada para a área de transferência.");
+      setTimeout(() => setTwofaSuccessMsg(null), 2200);
+    }).catch(() => {
+      setTwofaApiError("Não foi possível copiar a chave para a área de transferência.");
+    });
+  }
+
   async function handleVerify2FA() {
     if (twofaCode.length !== 6) {
       setTwofaCodeError("Informe os 6 dígitos do código.");
@@ -356,7 +367,8 @@ export function ProfileTab({
     try {
       const verifyResult = await verify2FA(session.accessToken, twofaCode);
       if (!verifyResult.valid) {
-        setTwofaApiError("Código TOTP inválido. Tente novamente.");
+        setTwofaApiError("Código TOTP inválido. Verifique se o relógio do seu celular está sincronizado.");
+        setTwofaCode("");
         return;
       }
       await enable2FA(session.accessToken, twofaCode);
@@ -368,6 +380,11 @@ export function ProfileTab({
     } finally {
       setTwofaLoading(false);
     }
+  }
+
+  async function handleRetry2FA() {
+    reset2FAState();
+    await handleSetup2FA();
   }
 
   async function handleDisable2FA() {
@@ -1479,7 +1496,7 @@ export function ProfileTab({
                     className="primary-button"
                     style={{ width: "100%", marginTop: "0.5rem" }}
                     onClick={handleSetup2FA}
-                    disabled={twofaLoading}
+                    disabled={twofaLoading || Boolean(twofaSetupData)}
                   >
                     {twofaLoading ? (
                       <>
@@ -1497,8 +1514,38 @@ export function ProfileTab({
               )}
 
               {/* Desabilitado e fase setup */}
+              {twofaPhase === "setup" && twofaApiError && (
+                <div className="form-alert" role="alert" style={{ margin: 0, marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
+                  <span style={{ flex: 1 }}>{twofaApiError}</span>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handleRetry2FA}
+                    disabled={twofaLoading}
+                    style={{ minWidth: "140px", flexShrink: 0 }}
+                  >
+                    Tentar Novamente
+                  </button>
+                </div>
+              )}
+
               {!twoFactorEnabled && twofaPhase === "setup" && twofaSetupData && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                  <div
+                    role="region"
+                    aria-label="Dica de sincronização"
+                    style={{
+                      padding: "0.75rem 1rem",
+                      borderRadius: "8px",
+                      background: "rgba(59, 130, 246, 0.08)",
+                      border: "1px solid rgba(59, 130, 246, 0.2)",
+                      color: "#1e40af",
+                      fontSize: "0.8rem",
+                      lineHeight: "1.4",
+                    }}
+                  >
+                    <strong>💡 Dica:</strong> Se o código não funcionar, verifique se a hora/data do seu celular estão sincronizadas automaticamente (Settings → Date & Time → Automatic).
+                  </div>
                   <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
                     <span
                       style={{
@@ -1565,11 +1612,19 @@ export function ProfileTab({
                         </div>
                       )}
 
-                      {twofaSetupData.secret && (
-                        <div style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "0.25rem" }}>
-                          Chave secreta: <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>{twofaSetupData.secret}</code>
-                        </div>
-                      )}
+                        {twofaSetupData.secret && (
+                          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem", justifyContent: "space-between" }}>
+                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                              Chave secreta: <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>{twofaSetupData.secret}</code>
+                              <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginTop: "0.25rem" }}>Não gere novamente depois de escanear o QR.</div>
+                            </div>
+                            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginLeft: "0.75rem" }}>
+                              <button type="button" className="secondary-button" onClick={copySecretToClipboard} style={{ minWidth: "120px" }}>
+                                Copiar chave
+                              </button>
+                            </div>
+                          </div>
+                        )}
                     </div>
                   </div>
 

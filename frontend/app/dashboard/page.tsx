@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   // Mirror 2FA status locally so TwoFATab can toggle it without a full reload
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  
 
   useEffect(() => {
     const currentSession = getSession();
@@ -37,6 +38,8 @@ export default function DashboardPage() {
     }
     setSession(currentSession);
     setTwoFactorEnabled(currentSession.user.two_factor_enabled ?? false);
+
+    // no-op
 
     // Setup background token expiration check
     const expiry = getJwtExpiry(currentSession.accessToken);
@@ -113,6 +116,7 @@ export default function DashboardPage() {
   const canManageCompanies = session.user.role === "MASTER";
   const canManagePlans = session.user.role === "MASTER";
   const canViewAudit = ["MASTER", "ADMIN"].includes(session.user.role);
+  
 
   return (
     <div className="db-layout">
